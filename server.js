@@ -993,7 +993,86 @@ app.delete("/api/projects/:id", requireAuth, async function deleteProject(
     });
   }
 });
+/* =========================================================
+   ANALYTICS ROUTES
+   ========================================================= */
 
+app.post("/api/analytics/nav-click", async function trackNavClick(
+  request,
+  response
+) {
+  try {
+    const {
+      label,
+      path,
+      current_path,
+      session_id,
+      user_type,
+    } = request.body;
+
+    if (!label || !path) {
+      return response.status(400).json({
+        message: "Label and path are required.",
+      });
+    }
+
+    await run(
+      `
+      INSERT INTO nav_clicks
+      (
+        label,
+        path,
+        current_path,
+        session_id,
+        user_type
+      )
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        label,
+        path,
+        current_path || "",
+        session_id || "",
+        user_type || "visitor",
+      ]
+    );
+
+    return response.status(201).json({
+      message: "Navigation click tracked.",
+    });
+  } catch (error) {
+    console.error("Failed to track navigation click:", error);
+
+    return response.status(500).json({
+      message: "Failed to track navigation click.",
+    });
+  }
+});
+
+app.get("/api/admin/analytics/nav-clicks", requireAuth, async function getNavClicks(
+  request,
+  response
+) {
+  try {
+    const clicks = await all(`
+      SELECT
+        label,
+        path,
+        COUNT(*) AS total_clicks
+      FROM nav_clicks
+      GROUP BY label, path
+      ORDER BY total_clicks DESC
+    `);
+
+    return response.json(clicks);
+  } catch (error) {
+    console.error("Failed to fetch navigation analytics:", error);
+
+    return response.status(500).json({
+      message: "Failed to fetch navigation analytics.",
+    });
+  }
+});
 /* =========================================================
    ERROR HANDLER
    ========================================================= */

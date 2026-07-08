@@ -235,6 +235,17 @@ async function initDb() {
         1,
       ]
     );
+    await run(`
+  CREATE TABLE IF NOT EXISTS nav_clicks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    label VARCHAR(100) NOT NULL,
+    path VARCHAR(255) NOT NULL,
+    current_path VARCHAR(255) DEFAULT '',
+    session_id VARCHAR(255) DEFAULT '',
+    user_type VARCHAR(50) DEFAULT 'visitor',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+`);
 
     await run(
       `
