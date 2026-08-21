@@ -315,6 +315,18 @@ async function getBlogImages(blogId) {
   );
 }
 
+async function getBlogVideos(blogId) {
+  return all(
+    `
+    SELECT *
+    FROM blog_videos
+    WHERE blog_id = ?
+    ORDER BY id ASC
+    `,
+    [blogId]
+  );
+}
+
 async function getProjectImages(projectId) {
   return all(
     `
@@ -340,11 +352,15 @@ async function getProjectVideos(projectId) {
 }
 
 async function attachBlogImages(blog) {
-  const images = await getBlogImages(blog.id);
+  const [images, videos] = await Promise.all([
+    getBlogImages(blog.id),
+    getBlogVideos(blog.id),
+  ]);
 
   return {
     ...blog,
     images,
+    videos,
   };
 }
 
@@ -405,6 +421,11 @@ const projectUploadFields = upload.fields([
   { name: "images", maxCount: 12 },
   { name: "video", maxCount: 1 },
   { name: "videos", maxCount: 4 },
+]);
+
+const blogUploadFields = upload.fields([
+  { name: "images", maxCount: 12 },
+  { name: "videos", maxCount: 3 },
 ]);
 
 async function optimizeRequestImages(request, response, next) {
@@ -742,7 +763,7 @@ app.get("/api/blogs/:id", validateIdParam, async function getBlogById(request, r
 app.post(
   "/api/blogs",
   requireAuth,
-  upload.array("images", 12),
+  blogUploadFields,
   verifyAndStoreUploadedFiles,
   optimizeRequestImages,
   validateBlogRequest(false),
@@ -765,7 +786,8 @@ app.post(
         });
       }
 
-      const uploadedImages = request.files || [];
+      const uploadedImages = request.files?.images || [];
+      const uploadedVideos = request.files?.videos || [];
       const coverImage =
         uploadedImages.length > 0 ? uploadedImages[0].filename : null;
 
@@ -808,6 +830,16 @@ app.post(
         );
       }
 
+      for (const file of uploadedVideos) {
+        await run(
+          `
+          INSERT INTO blog_videos (blog_id, video)
+          VALUES (?, ?)
+          `,
+          [result.id, file.filename]
+        );
+      }
+
       const createdBlog = await get("SELECT * FROM blogs WHERE id = ?", [
         result.id,
       ]);
@@ -829,7 +861,7 @@ app.put(
   "/api/blogs/:id",
   requireAuth,
   validateIdParam,
-  upload.array("images", 12),
+  blogUploadFields,
   verifyAndStoreUploadedFiles,
   optimizeRequestImages,
   validateBlogRequest(true),
@@ -845,7 +877,8 @@ app.put(
         });
       }
 
-      const uploadedImages = request.files || [];
+      const uploadedImages = request.files?.images || [];
+      const uploadedVideos = request.files?.videos || [];
 
       const image =
         uploadedImages.length > 0
@@ -908,6 +941,16 @@ app.put(
         );
       }
 
+      for (const file of uploadedVideos) {
+        await run(
+          `
+          INSERT INTO blog_videos (blog_id, video)
+          VALUES (?, ?)
+          `,
+          [id, file.filename]
+        );
+      }
+
       const savedBlog = await get("SELECT * FROM blogs WHERE id = ?", [id]);
       const blogWithImages = await attachBlogImages(savedBlog);
 
@@ -937,9 +980,13 @@ app.delete("/api/blogs/:id", requireAuth, validateIdParam, async function delete
       });
     }
 
-    const blogImages = await getBlogImages(id);
+    const [blogImages, blogVideos] = await Promise.all([
+      getBlogImages(id),
+      getBlogVideos(id),
+    ]);
 
     await run("DELETE FROM blog_images WHERE blog_id = ?", [id]);
+    await run("DELETE FROM blog_videos WHERE blog_id = ?", [id]);
     await run("DELETE FROM blogs WHERE id = ?", [id]);
 
     const filesToDelete = new Set();
@@ -951,6 +998,12 @@ app.delete("/api/blogs/:id", requireAuth, validateIdParam, async function delete
     for (const blogImage of blogImages) {
       if (blogImage.image) {
         filesToDelete.add(blogImage.image);
+      }
+    }
+
+    for (const blogVideo of blogVideos) {
+      if (blogVideo.video) {
+        filesToDelete.add(blogVideo.video);
       }
     }
 
@@ -1070,6 +1123,10 @@ app.delete(
         SELECT image AS filename
         FROM blog_images
         WHERE image IS NOT NULL AND image <> ''
+        UNION
+        SELECT video AS filename
+        FROM blog_videos
+        WHERE video IS NOT NULL AND video <> ''
         UNION
         SELECT image AS filename
         FROM projects

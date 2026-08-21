@@ -137,6 +137,19 @@ async function initDb() {
   `);
 
   await run(`
+    CREATE TABLE IF NOT EXISTS blog_videos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      blog_id INT NOT NULL,
+      video VARCHAR(255) NOT NULL,
+      caption VARCHAR(255) DEFAULT '',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_blog_videos_blog
+        FOREIGN KEY (blog_id) REFERENCES blogs(id)
+        ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await run(`
     CREATE TABLE IF NOT EXISTS projects (
       id INT AUTO_INCREMENT PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
