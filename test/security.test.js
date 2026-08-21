@@ -30,8 +30,10 @@ test("CORS permits the configured frontend and rejects other origins", async () 
     .options("/api/auth/login")
     .set("Origin", "http://localhost:5173")
     .set("Access-Control-Request-Method", "POST")
+    .set("Access-Control-Request-Headers", "content-type, authorization")
     .expect(204)
-    .expect("Access-Control-Allow-Origin", "http://localhost:5173");
+    .expect("Access-Control-Allow-Origin", "http://localhost:5173")
+    .expect("Access-Control-Allow-Headers", "Content-Type,Authorization");
 
   await request(app)
     .options("/api/auth/login")
