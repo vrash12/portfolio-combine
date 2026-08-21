@@ -1,275 +1,65 @@
 // backend/server.js
 
-require("dotenv").config({ quiet: true });
-
-const crypto = require("crypto");
 const express = require("express");
-const compression = require("compression");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const helmet = require("helmet");
-const { rateLimit } = require("express-rate-limit");
+const dotenv = require("dotenv");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { authenticator } = require("otplib");
 
 const { initDb, run, get, all } = require("./db");
-const { optionalAuth, requireAuth } = require("./middleware/auth");
-const {
-  IS_PRODUCTION,
-  SESSION_AUDIENCE,
-  SESSION_COOKIE_NAME,
-  SESSION_ISSUER,
-  SESSION_TTL_MINUTES,
-  assertSecurityConfiguration,
-  getClearSessionCookieOptions,
-  getSessionCookieOptions,
-} = require("./auth-config");
-const {
-  getOrCreateThumbnail,
-  optimizeUploadedImages,
-  stagingDir,
-  thumbnailDir,
-  uploadDir,
-} = require("./media");
-const {
-  allowedBrowserMimeTypes,
-  cleanupUploadedFiles,
-  createSafeStagingFilename,
-  verifyAndStoreUploadedFiles,
-} = require("./upload-security");
-const {
-  RequestValidationError,
-  validateAnalyticsBody,
-  validateBlogBody,
-  validateIdParam,
-  validateListFilter,
-  validateLoginBody,
-  validateProjectBody,
-} = require("./validation");
+const { requireAuth } = require("./middleware/auth");
+
+dotenv.config();
 
 const app = express();
 
-app.disable("x-powered-by");
-
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL =
-  process.env.FRONTEND_URL ||
-  (IS_PRODUCTION ? "" : "http://localhost:5173");
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
-function parseFrontendOrigin(value) {
-  let parsed;
+process.env.JWT_SECRET =
+  process.env.JWT_SECRET || "development_secret_change_this_later";
 
-  try {
-    parsed = new URL(value);
-  } catch {
-    throw new Error("FRONTEND_URL must be a valid absolute URL.");
-  }
-
-  if (
-    parsed.username ||
-    parsed.password ||
-    parsed.pathname !== "/" ||
-    parsed.search ||
-    parsed.hash
-  ) {
-    throw new Error("FRONTEND_URL must contain only one exact origin.");
-  }
-
-  if (IS_PRODUCTION && parsed.protocol !== "https:") {
-    throw new Error("Production FRONTEND_URL must use HTTPS.");
-  }
-
-  return parsed.origin;
-}
-
-const FRONTEND_ORIGIN = parseFrontendOrigin(FRONTEND_URL);
+const uploadDir = path.join(__dirname, "public", "static", "images");
 
 fs.mkdirSync(uploadDir, { recursive: true });
-fs.mkdirSync(stagingDir, { recursive: true });
-
-if (IS_PRODUCTION) {
-  app.set("trust proxy", 1);
-}
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'none'"],
-        baseUri: ["'none'"],
-        frameAncestors: ["'none'"],
-        formAction: ["'none'"],
-      },
-    },
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    frameguard: { action: "deny" },
-    hsts: IS_PRODUCTION
-      ? {
-          maxAge: 31536000,
-          includeSubDomains: true,
-          preload: false,
-        }
-      : false,
-    referrerPolicy: { policy: "no-referrer" },
-  })
-);
 
 app.use(
   cors({
-    origin(origin, callback) {
-      if (!origin || origin === FRONTEND_ORIGIN) {
-        callback(null, true);
-        return;
-      }
-
-      const error = new Error("Origin is not permitted by CORS.");
-      error.statusCode = 403;
-      callback(error);
-    },
-    methods: ["GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    origin: FRONTEND_URL,
     credentials: true,
-    maxAge: 86400,
   })
 );
 
-app.use(compression({ threshold: 1024 }));
-app.use(cookieParser());
-app.use(express.json({ limit: "64kb", strict: true }));
-app.use(express.urlencoded({ extended: false, limit: "64kb" }));
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 
-app.use(function requireTrustedMutationOrigin(request, response, next) {
-  if (["GET", "HEAD", "OPTIONS"].includes(request.method)) {
-    next();
-    return;
-  }
-
-  const origin = request.get("origin");
-
-  if (origin === FRONTEND_ORIGIN || (!IS_PRODUCTION && !origin)) {
-    next();
-    return;
-  }
-
-  return response.status(403).json({
-    message: "The request origin is not trusted.",
-  });
-});
-
-app.get("/static/thumbnails/:filename", async function thumbnail(
-  request,
-  response
-) {
-  try {
-    if (Object.keys(request.query).some((key) => key !== "w")) {
-      return response.status(400).json({
-        message: "Unsupported thumbnail query parameter.",
-      });
-    }
-
-    if (
-      request.query.w !== undefined &&
-      (typeof request.query.w !== "string" ||
-        !/^\d{3,4}$/.test(request.query.w) ||
-        Number(request.query.w) < 320 ||
-        Number(request.query.w) > 1600)
-    ) {
-      return response.status(400).json({
-        message: "Thumbnail width must be between 320 and 1600 pixels.",
-      });
-    }
-
-    const thumbnailPath = await getOrCreateThumbnail(
-      request.params.filename,
-      request.query.w
-    );
-
-    response.set({
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Type": "image/webp",
-    });
-
-    return response.sendFile(thumbnailPath);
-  } catch (error) {
-    if (
-      error.code === "MEDIA_NOT_FOUND" ||
-      error.code === "UNSUPPORTED_MEDIA"
-    ) {
-      return response.status(404).end();
-    }
-
-    console.error("Failed to create thumbnail:", error);
-    return response.status(500).end();
-  }
-});
-
-app.use(
-  "/static/images",
-  express.static(uploadDir, {
-    dotfiles: "deny",
-    immutable: true,
-    index: false,
-    maxAge: "1y",
-    redirect: false,
-  })
-);
+app.use("/static/images", express.static(uploadDir));
 
 function safeDeleteFile(filename) {
   if (!filename) return;
 
-  const safeFilename = path.basename(filename);
+  const filePath = path.join(uploadDir, filename);
 
-  if (safeFilename !== filename) {
-    console.error("Refused to delete an unsafe media filename:", filename);
-    return;
-  }
-
-  const filePath = path.join(uploadDir, safeFilename);
-
-  fs.rm(
-    filePath,
-    { force: true, maxRetries: 10, retryDelay: 100 },
-    function removeFile(error) {
-      if (error && error.code !== "ENOENT") {
-        console.error("Failed to delete uploaded file:", error);
-      }
-    }
-  );
-
-  fs.readdir(thumbnailDir, function findGeneratedThumbnails(error, files) {
+  fs.unlink(filePath, function removeFile(error) {
     if (error && error.code !== "ENOENT") {
-      console.error("Failed to inspect generated thumbnails:", error);
-      return;
-    }
-
-    for (const thumbnail of files || []) {
-      if (!thumbnail.startsWith(`${safeFilename}-`)) continue;
-
-      fs.rm(
-        path.join(thumbnailDir, thumbnail),
-        { force: true, maxRetries: 10, retryDelay: 100 },
-        function removeThumbnail(thumbnailError) {
-          if (thumbnailError && thumbnailError.code !== "ENOENT") {
-            console.error(
-              "Failed to delete generated thumbnail:",
-              thumbnailError
-            );
-          }
-        }
-      );
+      console.error("Failed to delete uploaded file:", error);
     }
   });
 }
 
-function setPublicDataCache(response) {
-  response.set(
-    "Cache-Control",
-    "public, max-age=60, stale-while-revalidate=300"
-  );
+function toPublishedValue(value, fallback = 1) {
+  if (value === undefined || value === null) return fallback;
+
+  return value === "0" || value === 0 || value === "false" ? 0 : 1;
+}
+
+function toFeaturedValue(value, fallback = 0) {
+  if (value === undefined || value === null) return fallback;
+
+  return value === "1" || value === 1 || value === "true" ? 1 : 0;
 }
 
 async function ensureProjectMediaSchema() {
@@ -384,11 +174,20 @@ async function attachProjectMedia(project) {
 
 const storage = multer.diskStorage({
   destination: function destination(request, file, callback) {
-    callback(null, stagingDir);
+    callback(null, uploadDir);
   },
 
   filename: function filename(request, file, callback) {
-    callback(null, createSafeStagingFilename());
+    const originalName = file.originalname
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9.-]/g, "");
+
+    const uniqueName = `${Date.now()}-${Math.round(
+      Math.random() * 1000000000
+    )}-${originalName}`;
+
+    callback(null, uniqueName);
   },
 });
 
@@ -396,27 +195,25 @@ const upload = multer({
   storage,
 
   limits: {
-    fileSize: 50 * 1024 * 1024,
-    files: 20,
-    fields: 20,
-    parts: 40,
-    fieldNameSize: 100,
-    fieldSize: 256 * 1024,
-    headerPairs: 100,
+    fileSize: 500 * 1024 * 1024,
+    files: 500,
   },
 
   fileFilter: function fileFilter(request, file, callback) {
-    const allowedFields = new Set(["image", "images", "video", "videos"]);
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/jpg",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+    ];
 
-    if (
-      !allowedFields.has(file.fieldname) ||
-      !allowedBrowserMimeTypes.has(file.mimetype)
-    ) {
-      const error = new Error(
-        "Only JPG, PNG, WEBP, MP4, WEBM, and MOV files are allowed."
+    if (!allowedTypes.includes(file.mimetype)) {
+      callback(
+        new Error("Only JPG, PNG, WEBP, MP4, WEBM, and MOV files are allowed.")
       );
-      error.statusCode = 400;
-      callback(error);
       return;
     }
 
@@ -426,119 +223,10 @@ const upload = multer({
 
 const projectUploadFields = upload.fields([
   { name: "image", maxCount: 1 },
-  { name: "images", maxCount: 12 },
+  { name: "images", maxCount: 50 },
   { name: "video", maxCount: 1 },
-  { name: "videos", maxCount: 4 },
+  { name: "videos", maxCount: 20 },
 ]);
-
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const failedAccountLogins = new Map();
-const dummyPasswordHashPromise = bcrypt.hash(crypto.randomUUID(), 10);
-
-const loginIpLimiter = rateLimit({
-  windowMs: LOGIN_WINDOW_MS,
-  limit: 10,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-  message: {
-    message: "Too many login attempts. Please try again later.",
-  },
-});
-
-function accountKey(email) {
-  return crypto.createHash("sha256").update(email).digest("hex");
-}
-
-function getAccountFailure(email) {
-  const key = accountKey(email);
-  const failure = failedAccountLogins.get(key);
-
-  if (!failure || failure.resetAt <= Date.now()) {
-    failedAccountLogins.delete(key);
-    return null;
-  }
-
-  return failure;
-}
-
-function recordAccountFailure(email) {
-  const key = accountKey(email);
-  const current = getAccountFailure(email);
-
-  if (failedAccountLogins.size >= 5000 && !failedAccountLogins.has(key)) {
-    const oldestKey = failedAccountLogins.keys().next().value;
-    failedAccountLogins.delete(oldestKey);
-  }
-
-  failedAccountLogins.set(key, {
-    count: (current?.count || 0) + 1,
-    resetAt: current?.resetAt || Date.now() + LOGIN_WINDOW_MS,
-  });
-}
-
-function resetAccountFailures(email) {
-  failedAccountLogins.delete(accountKey(email));
-}
-
-function validateLoginRequest(request, response, next) {
-  try {
-    request.validatedLogin = validateLoginBody(request.body);
-    next();
-  } catch (error) {
-    next(error);
-  }
-}
-
-function loginAccountLimiter(request, response, next) {
-  const failure = getAccountFailure(request.validatedLogin.email);
-
-  if (failure?.count >= 5) {
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((failure.resetAt - Date.now()) / 1000)
-    );
-
-    response.set("Retry-After", String(retryAfterSeconds));
-
-    return response.status(429).json({
-      message: "Too many login attempts. Please try again later.",
-    });
-  }
-
-  next();
-}
-
-function validateBlogRequest(partial = false) {
-  return function validateBlog(request, response, next) {
-    try {
-      request.validatedBody = validateBlogBody(request.body, { partial });
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-function validateProjectRequest(partial = false) {
-  return function validateProject(request, response, next) {
-    try {
-      request.validatedBody = validateProjectBody(request.body, { partial });
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-function validateAnalyticsRequest(request, response, next) {
-  try {
-    request.validatedBody = validateAnalyticsBody(request.body);
-    next();
-  } catch (error) {
-    next(error);
-  }
-}
 
 app.get("/", function home(request, response) {
   response.json({
@@ -558,112 +246,67 @@ app.get("/api/health", function health(request, response) {
    AUTH ROUTES
    ========================================================= */
 
-app.post(
-  "/api/auth/login",
-  loginIpLimiter,
-  validateLoginRequest,
-  loginAccountLimiter,
-  async function login(request, response) {
-    try {
-      const { email, password, otp } = request.validatedLogin;
+app.post("/api/auth/login", async function login(request, response) {
+  try {
+    const { email, password } = request.body;
 
-      const user = await get("SELECT * FROM users WHERE email = ?", [email]);
-      const passwordHash = user?.password || (await dummyPasswordHashPromise);
-      const passwordMatches = await bcrypt.compare(password, passwordHash);
-
-      if (!user || !passwordMatches) {
-        recordAccountFailure(email);
-
-        return response.status(401).json({
-          message: "Invalid email or password.",
-        });
-      }
-
-      const mfaSecret = (process.env.ADMIN_MFA_SECRET || "")
-        .replace(/\s+/g, "")
-        .toUpperCase();
-      const requiresMfa = user.role === "admin" && Boolean(mfaSecret);
-
-      if (requiresMfa && !otp) {
-        return response.json({
-          message: "Additional verification is required.",
-          mfaRequired: true,
-        });
-      }
-
-      if (requiresMfa && !authenticator.check(otp, mfaSecret)) {
-        recordAccountFailure(email);
-
-        return response.status(401).json({
-          message: "Invalid email, password, or authenticator code.",
-        });
-      }
-
-      resetAccountFailures(email);
-
-      const token = jwt.sign(
-        {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        process.env.JWT_SECRET,
-        {
-          algorithm: "HS256",
-          audience: SESSION_AUDIENCE,
-          expiresIn: `${SESSION_TTL_MINUTES}m`,
-          issuer: SESSION_ISSUER,
-          jwtid: crypto.randomUUID(),
-        }
-      );
-
-      response.cookie(
-        SESSION_COOKIE_NAME,
-        token,
-        getSessionCookieOptions()
-      );
-      response.set("Cache-Control", "no-store");
-
-      return response.json({
-        message: "Login successful.",
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      });
-    } catch (error) {
-      console.error("Login failed:", error);
-
-      return response.status(500).json({
-        message: "Login failed.",
+    if (!email || !password) {
+      return response.status(400).json({
+        message: "Email and password are required.",
       });
     }
+
+    const user = await get("SELECT * FROM users WHERE email = ?", [email]);
+
+    if (!user) {
+      return response.status(401).json({
+        message: "Invalid email or password.",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatches) {
+      return response.status(401).json({
+        message: "Invalid email or password.",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
+    return response.json({
+      message: "Login successful.",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Login failed:", error);
+
+    return response.status(500).json({
+      message: "Login failed.",
+    });
   }
-);
-
-app.post("/api/auth/logout", function logout(request, response) {
-  response.clearCookie(
-    SESSION_COOKIE_NAME,
-    getClearSessionCookieOptions()
-  );
-  response.set("Cache-Control", "no-store");
-
-  return response.json({ message: "Logged out successfully." });
 });
 
 app.get("/api/auth/me", requireAuth, async function me(request, response) {
-  response.set("Cache-Control", "no-store");
-
   response.json({
-    user: {
-      id: request.user.id,
-      name: request.user.name,
-      email: request.user.email,
-      role: request.user.role,
-    },
+    user: request.user,
   });
 });
 
@@ -673,16 +316,7 @@ app.get("/api/auth/me", requireAuth, async function me(request, response) {
 
 app.get("/api/blogs", async function getBlogs(request, response) {
   try {
-    if (
-      Object.keys(request.query).some(
-        (key) => !["tag", "category"].includes(key)
-      )
-    ) {
-      throw new RequestValidationError("Unsupported blog query parameter.");
-    }
-
-    const tag = validateListFilter(request.query.tag, "Tag");
-    const category = validateListFilter(request.query.category, "Category");
+    const { tag, category } = request.query;
 
     const params = [];
 
@@ -711,13 +345,8 @@ app.get("/api/blogs", async function getBlogs(request, response) {
     const blogs = await all(sql, params);
     const blogsWithImages = await Promise.all(blogs.map(attachBlogImages));
 
-    setPublicDataCache(response);
     return response.json(blogsWithImages);
   } catch (error) {
-    if (error instanceof RequestValidationError) {
-      return response.status(400).json({ message: error.message });
-    }
-
     console.error("Failed to fetch blogs:", error);
 
     return response.status(500).json({
@@ -726,48 +355,41 @@ app.get("/api/blogs", async function getBlogs(request, response) {
   }
 });
 
-app.get(
-  "/api/blogs/:id",
-  validateIdParam,
-  async function getBlogById(request, response) {
-    try {
-      const id = request.validatedId;
+app.get("/api/blogs/:id", async function getBlogById(request, response) {
+  try {
+    const { id } = request.params;
 
-      const blog = await get(
-        `
-        SELECT *
-        FROM blogs
-        WHERE id = ? AND published = 1
-        `,
-        [id]
-      );
+    const blog = await get(
+      `
+      SELECT *
+      FROM blogs
+      WHERE id = ? AND published = 1
+      `,
+      [id]
+    );
 
-      if (!blog) {
-        return response.status(404).json({
-          message: "Blog post not found.",
-        });
-      }
-
-      const blogWithImages = await attachBlogImages(blog);
-
-      setPublicDataCache(response);
-      return response.json(blogWithImages);
-    } catch (error) {
-      console.error("Failed to fetch blog:", error);
-
-      return response.status(500).json({
-        message: "Failed to fetch blog post.",
+    if (!blog) {
+      return response.status(404).json({
+        message: "Blog post not found.",
       });
     }
+
+    const blogWithImages = await attachBlogImages(blog);
+
+    return response.json(blogWithImages);
+  } catch (error) {
+    console.error("Failed to fetch blog:", error);
+
+    return response.status(500).json({
+      message: "Failed to fetch blog post.",
+    });
   }
-);
+});
 
 app.post(
   "/api/blogs",
   requireAuth,
-  upload.array("images", 12),
-  verifyAndStoreUploadedFiles,
-  validateBlogRequest(false),
+  upload.array("images", 50),
   async function createBlog(request, response) {
     try {
       const {
@@ -779,11 +401,15 @@ app.post(
         location,
         adventure_date,
         published,
-      } = request.validatedBody;
+      } = request.body;
 
-      const uploadedImages = await optimizeUploadedImages(
-        request.files || []
-      );
+      if (!title || !description || !body) {
+        return response.status(400).json({
+          message: "Title, description, and body are required.",
+        });
+      }
+
+      const uploadedImages = request.files || [];
       const coverImage =
         uploadedImages.length > 0 ? uploadedImages[0].filename : null;
 
@@ -812,7 +438,7 @@ app.post(
           category || "",
           location || "",
           adventure_date || null,
-          published ?? 1,
+          toPublishedValue(published, 1),
         ]
       );
 
@@ -846,14 +472,10 @@ app.post(
 app.put(
   "/api/blogs/:id",
   requireAuth,
-  validateIdParam,
-  upload.array("images", 12),
-  verifyAndStoreUploadedFiles,
-  validateBlogRequest(true),
+  upload.array("images", 50),
   async function updateBlog(request, response) {
     try {
-      const id = request.validatedId;
-      const input = request.validatedBody;
+      const { id } = request.params;
 
       const existingBlog = await get("SELECT * FROM blogs WHERE id = ?", [id]);
 
@@ -863,9 +485,7 @@ app.put(
         });
       }
 
-      const uploadedImages = await optimizeUploadedImages(
-        request.files || []
-      );
+      const uploadedImages = request.files || [];
 
       const image =
         uploadedImages.length > 0
@@ -873,21 +493,19 @@ app.put(
           : existingBlog.image;
 
       const updatedBlog = {
-        title: input.title ?? existingBlog.title,
-        description: input.description ?? existingBlog.description,
-        body: input.body ?? existingBlog.body,
+        title: request.body.title ?? existingBlog.title,
+        description: request.body.description ?? existingBlog.description,
+        body: request.body.body ?? existingBlog.body,
         image,
-        tags: input.tags ?? existingBlog.tags,
-        category: input.category ?? existingBlog.category,
-        location: input.location ?? existingBlog.location,
+        tags: request.body.tags ?? existingBlog.tags,
+        category: request.body.category ?? existingBlog.category,
+        location: request.body.location ?? existingBlog.location,
         adventure_date:
-          input.adventure_date === undefined
-            ? existingBlog.adventure_date
-            : input.adventure_date,
-        published:
-          input.published === undefined
-            ? existingBlog.published
-            : input.published,
+          request.body.adventure_date ?? existingBlog.adventure_date,
+        published: toPublishedValue(
+          request.body.published,
+          existingBlog.published
+        ),
       };
 
       await run(
@@ -944,12 +562,12 @@ app.put(
   }
 );
 
-app.delete("/api/blogs/:id", requireAuth, validateIdParam, async function deleteBlog(
+app.delete("/api/blogs/:id", requireAuth, async function deleteBlog(
   request,
   response
 ) {
   try {
-    const id = request.validatedId;
+    const { id } = request.params;
 
     const existingBlog = await get("SELECT * FROM blogs WHERE id = ?", [id]);
 
@@ -1027,25 +645,7 @@ app.get("/api/admin/projects", requireAuth, async function getAdminProjects(
 
 app.get("/api/projects", async function getProjects(request, response) {
   try {
-    if (
-      Object.keys(request.query).some(
-        (key) => !["category", "featured"].includes(key)
-      )
-    ) {
-      throw new RequestValidationError("Unsupported project query parameter.");
-    }
-
-    const category = validateListFilter(request.query.category, "Category");
-    const featured = request.query.featured;
-
-    if (
-      featured !== undefined &&
-      !["0", "1", "false", "true"].includes(featured)
-    ) {
-      throw new RequestValidationError(
-        "Featured must be true or false."
-      );
-    }
+    const { category, featured } = request.query;
 
     const params = [];
 
@@ -1074,13 +674,8 @@ app.get("/api/projects", async function getProjects(request, response) {
     const projects = await all(sql, params);
     const projectsWithMedia = await Promise.all(projects.map(attachProjectMedia));
 
-    setPublicDataCache(response);
     return response.json(projectsWithMedia);
   } catch (error) {
-    if (error instanceof RequestValidationError) {
-      return response.status(400).json({ message: error.message });
-    }
-
     console.error("Failed to fetch projects:", error);
 
     return response.status(500).json({
@@ -1089,48 +684,41 @@ app.get("/api/projects", async function getProjects(request, response) {
   }
 });
 
-app.get(
-  "/api/projects/:id",
-  validateIdParam,
-  async function getProjectById(request, response) {
-    try {
-      const id = request.validatedId;
+app.get("/api/projects/:id", async function getProjectById(request, response) {
+  try {
+    const { id } = request.params;
 
-      const project = await get(
-        `
-        SELECT *
-        FROM projects
-        WHERE id = ? AND published = 1
-        `,
-        [id]
-      );
+    const project = await get(
+      `
+      SELECT *
+      FROM projects
+      WHERE id = ? AND published = 1
+      `,
+      [id]
+    );
 
-      if (!project) {
-        return response.status(404).json({
-          message: "Project not found.",
-        });
-      }
-
-      const projectWithMedia = await attachProjectMedia(project);
-
-      setPublicDataCache(response);
-      return response.json(projectWithMedia);
-    } catch (error) {
-      console.error("Failed to fetch project:", error);
-
-      return response.status(500).json({
-        message: "Failed to fetch project.",
+    if (!project) {
+      return response.status(404).json({
+        message: "Project not found.",
       });
     }
+
+    const projectWithMedia = await attachProjectMedia(project);
+
+    return response.json(projectWithMedia);
+  } catch (error) {
+    console.error("Failed to fetch project:", error);
+
+    return response.status(500).json({
+      message: "Failed to fetch project.",
+    });
   }
-);
+});
 
 app.post(
   "/api/projects",
   requireAuth,
   projectUploadFields,
-  verifyAndStoreUploadedFiles,
-  validateProjectRequest(false),
   async function createProject(request, response) {
     try {
       const {
@@ -1142,7 +730,13 @@ app.post(
         live_url,
         featured,
         published,
-      } = request.validatedBody;
+      } = request.body;
+
+      if (!title || !description || !category) {
+        return response.status(400).json({
+          message: "Title, description, and category are required.",
+        });
+      }
 
       const coverImageFile = request.files?.image?.[0] || null;
       const galleryImageFiles = request.files?.images || [];
@@ -1150,11 +744,6 @@ app.post(
         ...(request.files?.videos || []),
         ...(request.files?.video || []),
       ];
-
-      await optimizeUploadedImages([
-        coverImageFile,
-        ...galleryImageFiles,
-      ]);
 
       const image = coverImageFile?.filename || null;
       const video = videoFiles[0]?.filename || null;
@@ -1185,8 +774,8 @@ app.post(
           technologies || "",
           github_url || "",
           live_url || "",
-          featured ?? 0,
-          published ?? 1,
+          toFeaturedValue(featured, 0),
+          toPublishedValue(published, 1),
         ]
       );
 
@@ -1230,14 +819,10 @@ app.post(
 app.put(
   "/api/projects/:id",
   requireAuth,
-  validateIdParam,
   projectUploadFields,
-  verifyAndStoreUploadedFiles,
-  validateProjectRequest(true),
   async function updateProject(request, response) {
     try {
-      const id = request.validatedId;
-      const input = request.validatedBody;
+      const { id } = request.params;
 
       const existingProject = await get("SELECT * FROM projects WHERE id = ?", [
         id,
@@ -1256,31 +841,23 @@ app.put(
         ...(request.files?.video || []),
       ];
 
-      await optimizeUploadedImages([
-        coverImageFile,
-        ...galleryImageFiles,
-      ]);
-
       const image = coverImageFile?.filename || existingProject.image;
       const video = videoFiles[0]?.filename || existingProject.video;
 
       const updatedProject = {
-        title: input.title ?? existingProject.title,
-        description: input.description ?? existingProject.description,
+        title: request.body.title ?? existingProject.title,
+        description: request.body.description ?? existingProject.description,
         image,
         video,
-        category: input.category ?? existingProject.category,
-        technologies: input.technologies ?? existingProject.technologies,
-        github_url: input.github_url ?? existingProject.github_url,
-        live_url: input.live_url ?? existingProject.live_url,
-        featured:
-          input.featured === undefined
-            ? existingProject.featured
-            : input.featured,
-        published:
-          input.published === undefined
-            ? existingProject.published
-            : input.published,
+        category: request.body.category ?? existingProject.category,
+        technologies: request.body.technologies ?? existingProject.technologies,
+        github_url: request.body.github_url ?? existingProject.github_url,
+        live_url: request.body.live_url ?? existingProject.live_url,
+        featured: toFeaturedValue(request.body.featured, existingProject.featured),
+        published: toPublishedValue(
+          request.body.published,
+          existingProject.published
+        ),
       };
 
       await run(
@@ -1357,12 +934,12 @@ app.put(
   }
 );
 
-app.delete("/api/projects/:id", requireAuth, validateIdParam, async function deleteProject(
+app.delete("/api/projects/:id", requireAuth, async function deleteProject(
   request,
   response
 ) {
   try {
-    const id = request.validatedId;
+    const { id } = request.params;
 
     const existingProject = await get("SELECT * FROM projects WHERE id = ?", [
       id,
@@ -1420,48 +997,57 @@ app.delete("/api/projects/:id", requireAuth, validateIdParam, async function del
    ANALYTICS ROUTES
    ========================================================= */
 
-app.post(
-  "/api/analytics/nav-click",
-  optionalAuth,
-  validateAnalyticsRequest,
-  async function trackNavClick(request, response) {
-    try {
-      const { label, path, current_path, session_id } = request.validatedBody;
-      const userType = request.user?.role === "admin" ? "admin" : "visitor";
+app.post("/api/analytics/nav-click", async function trackNavClick(
+  request,
+  response
+) {
+  try {
+    const {
+      label,
+      path,
+      current_path,
+      session_id,
+      user_type,
+    } = request.body;
 
-      await run(
-        `
-        INSERT INTO nav_clicks
-        (
-          label,
-          path,
-          current_path,
-          session_id,
-          user_type
-        )
-        VALUES (?, ?, ?, ?, ?)
-        `,
-        [
-          label,
-          path,
-          current_path || "",
-          session_id || "",
-          userType,
-        ]
-      );
-
-      return response.status(201).json({
-        message: "Navigation click tracked.",
-      });
-    } catch (error) {
-      console.error("Failed to track navigation click:", error);
-
-      return response.status(500).json({
-        message: "Failed to track navigation click.",
+    if (!label || !path) {
+      return response.status(400).json({
+        message: "Label and path are required.",
       });
     }
+
+    await run(
+      `
+      INSERT INTO nav_clicks
+      (
+        label,
+        path,
+        current_path,
+        session_id,
+        user_type
+      )
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        label,
+        path,
+        current_path || "",
+        session_id || "",
+        user_type || "visitor",
+      ]
+    );
+
+    return response.status(201).json({
+      message: "Navigation click tracked.",
+    });
+  } catch (error) {
+    console.error("Failed to track navigation click:", error);
+
+    return response.status(500).json({
+      message: "Failed to track navigation click.",
+    });
   }
-);
+});
 
 app.get("/api/admin/analytics/nav-clicks", requireAuth, async function getNavClicks(
   request,
@@ -1491,42 +1077,20 @@ app.get("/api/admin/analytics/nav-clicks", requireAuth, async function getNavCli
    ERROR HANDLER
    ========================================================= */
 
-app.use(async function errorHandler(error, request, response, next) {
-  try {
-    await cleanupUploadedFiles(request.files);
-  } catch (cleanupError) {
-    console.error("Failed to clean up rejected uploads:", cleanupError);
-  }
-
-  if (response.headersSent) {
-    next(error);
-    return;
-  }
-
+app.use(function errorHandler(error, request, response, next) {
   if (error instanceof multer.MulterError) {
-    const uploadMessages = {
-      LIMIT_FILE_SIZE: "Each upload must be 50 MB or smaller.",
-      LIMIT_FILE_COUNT: "No more than 20 files may be uploaded at once.",
-      LIMIT_UNEXPECTED_FILE: "An unexpected upload field or too many files were provided.",
-    };
-
     return response.status(400).json({
-      message: uploadMessages[error.code] || "The upload was rejected.",
+      message: error.message,
     });
   }
 
-  const statusCode = Number(error?.statusCode) || 500;
-
-  if (statusCode >= 500) {
-    console.error("Unhandled request error:", error);
+  if (error) {
+    return response.status(400).json({
+      message: error.message || "Something went wrong.",
+    });
   }
 
-  return response.status(statusCode).json({
-    message:
-      statusCode >= 500
-        ? "An unexpected server error occurred."
-        : error.message || "The request was rejected.",
-  });
+  next();
 });
 
 /* =========================================================
@@ -1535,7 +1099,6 @@ app.use(async function errorHandler(error, request, response, next) {
 
 async function startServer() {
   try {
-    assertSecurityConfiguration();
     await initDb();
     await ensureProjectMediaSchema();
 
@@ -1548,11 +1111,4 @@ async function startServer() {
   }
 }
 
-if (require.main === module) {
-  startServer();
-}
-
-module.exports = {
-  app,
-  startServer,
-};
+startServer();
