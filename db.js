@@ -3,11 +3,14 @@
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcryptjs");
 
-const DB_HOST = process.env.DB_HOST || "localhost";
+const IS_PRODUCTION =
+  process.env.NODE_ENV === "production" ||
+  (process.env.FRONTEND_URL || "").startsWith("https://");
+const DB_HOST = process.env.DB_HOST || (IS_PRODUCTION ? "" : "localhost");
 const DB_PORT = Number(process.env.DB_PORT || 3306);
-const DB_USER = process.env.DB_USER || "root";
+const DB_USER = process.env.DB_USER || (IS_PRODUCTION ? "" : "root");
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
-const DB_NAME = process.env.DB_NAME || "portfolio_db";
+const DB_NAME = process.env.DB_NAME || (IS_PRODUCTION ? "" : "portfolio_db");
 
 let pool;
 
@@ -22,6 +25,12 @@ function escapeDatabaseName(databaseName) {
 }
 
 async function ensureDatabaseExists() {
+  if (!DB_HOST || !DB_USER || (IS_PRODUCTION && !DB_PASSWORD) || !DB_NAME) {
+    throw new Error(
+      "DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME must be configured."
+    );
+  }
+
   const connection = await mysql.createConnection({
     host: DB_HOST,
     port: DB_PORT,
@@ -279,16 +288,28 @@ async function initDb() {
     );
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-  const adminName = process.env.ADMIN_NAME || "Admin";
+  const existingUsers = await get("SELECT COUNT(*) AS count FROM users");
 
-  const existingAdmin = await get("SELECT * FROM users WHERE email = ?", [
-    adminEmail,
-  ]);
+  if (Number(existingUsers.count) === 0) {
+    const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || "";
+    const adminName = (process.env.ADMIN_NAME || "").trim();
 
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    if (!adminName || !adminEmail || !adminPassword) {
+      throw new Error(
+        "ADMIN_NAME, ADMIN_EMAIL, and ADMIN_PASSWORD are required to create the first administrator."
+      );
+    }
+
+    if (adminEmail === "admin@example.com" || adminPassword === "admin123") {
+      throw new Error("Default administrator credentials are not allowed.");
+    }
+
+    if (adminPassword.length < 12) {
+      throw new Error("ADMIN_PASSWORD must contain at least 12 characters.");
+    }
+
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
     await run(
       `
@@ -298,7 +319,7 @@ async function initDb() {
       [adminName, adminEmail, hashedPassword, "admin"]
     );
 
-    console.log(`Admin user created: ${adminEmail}`);
+    console.log("The initial administrator account was created securely.");
   }
 
   const existingBlogs = await get("SELECT COUNT(*) AS count FROM blogs");
