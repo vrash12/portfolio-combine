@@ -1491,7 +1491,10 @@ async function startServer() {
   }
 }
 
-if (require.main === module) {
+// Hostinger loads the entry file through its own runtime wrapper, so
+// `require.main === module` is false in production even for the entry file.
+// Keep tests import-safe while always starting the deployed application.
+if (process.env.NODE_ENV !== "test") {
   startServer();
 }
 
