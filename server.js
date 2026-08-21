@@ -201,29 +201,36 @@ app.use(
   })
 );
 
-function safeDeleteFile(filename) {
-  if (!filename) return;
+async function deleteMediaFile(filename) {
+  if (!filename) return false;
 
   const safeFilename = path.basename(filename);
   if (safeFilename !== filename) {
-    console.error("Refused to delete an unsafe media filename.");
-    return;
+    throw new Error("Refused to delete an unsafe media filename.");
   }
 
   const filePath = path.join(uploadDir, safeFilename);
+  await fsp.rm(filePath, { force: true });
 
-  fs.rm(filePath, { force: true }, function removeFile(error) {
-    if (error && error.code !== "ENOENT") {
-      console.error("Failed to delete uploaded file:", error);
-    }
+  const thumbnails = await fsp.readdir(thumbnailDir).catch((error) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
   });
 
-  fs.readdir(thumbnailDir, function removeGeneratedThumbnails(error, files) {
-    if (error) return;
-    for (const thumbnail of files) {
-      if (!thumbnail.startsWith(`${safeFilename}-`)) continue;
-      fs.rm(path.join(thumbnailDir, thumbnail), { force: true }, () => {});
-    }
+  await Promise.all(
+    thumbnails
+      .filter((thumbnail) => thumbnail.startsWith(`${safeFilename}-`))
+      .map((thumbnail) =>
+        fsp.rm(path.join(thumbnailDir, thumbnail), { force: true })
+      )
+  );
+
+  return true;
+}
+
+function safeDeleteFile(filename) {
+  deleteMediaFile(filename).catch((error) => {
+    console.error("Failed to delete uploaded file:", error);
   });
 }
 
@@ -959,6 +966,89 @@ app.delete("/api/blogs/:id", requireAuth, validateIdParam, async function delete
     });
   }
 });
+
+app.delete(
+  "/api/admin/blog-images",
+  requireAuth,
+  async function deleteAllBlogImages(request, response) {
+    try {
+      if (request.body?.confirmation !== "REMOVE_ALL_BLOG_IMAGES") {
+        return response.status(400).json({
+          message: "Explicit confirmation is required.",
+        });
+      }
+
+      const [coverRows, galleryRows, projectMediaRows] = await Promise.all([
+        all("SELECT image FROM blogs WHERE image IS NOT NULL AND image <> ''"),
+        all(
+          "SELECT image FROM blog_images WHERE image IS NOT NULL AND image <> ''"
+        ),
+        all(`
+          SELECT image AS filename
+          FROM projects
+          WHERE image IS NOT NULL AND image <> ''
+          UNION
+          SELECT video AS filename
+          FROM projects
+          WHERE video IS NOT NULL AND video <> ''
+          UNION
+          SELECT image AS filename
+          FROM project_images
+          WHERE image IS NOT NULL AND image <> ''
+          UNION
+          SELECT video AS filename
+          FROM project_videos
+          WHERE video IS NOT NULL AND video <> ''
+        `),
+      ]);
+
+      const blogFiles = new Set(
+        [...coverRows, ...galleryRows].map((row) => row.image).filter(Boolean)
+      );
+      const projectFiles = new Set(
+        projectMediaRows.map((row) => row.filename).filter(Boolean)
+      );
+      const filesToDelete = [...blogFiles].filter(
+        (filename) => !projectFiles.has(filename)
+      );
+
+      const coverUpdate = await run(
+        `
+        UPDATE blogs
+        SET image = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE image IS NOT NULL AND image <> ''
+        `
+      );
+      const galleryDelete = await run("DELETE FROM blog_images");
+
+      const deletionResults = await Promise.allSettled(
+        filesToDelete.map((filename) => deleteMediaFile(filename))
+      );
+      const failedFileDeletes = deletionResults.filter(
+        (result) => result.status === "rejected"
+      );
+
+      for (const failure of failedFileDeletes) {
+        console.error("Failed to remove a blog image file:", failure.reason);
+      }
+
+      return response.json({
+        message: "All blog images were removed.",
+        coverReferencesRemoved: coverUpdate.changes,
+        galleryRecordsRemoved: galleryDelete.changes,
+        filesRemoved: filesToDelete.length - failedFileDeletes.length,
+        filesSharedWithProjects: blogFiles.size - filesToDelete.length,
+        failedFileDeletes: failedFileDeletes.length,
+      });
+    } catch (error) {
+      console.error("Failed to remove all blog images:", error);
+
+      return response.status(500).json({
+        message: "Failed to remove all blog images.",
+      });
+    }
+  }
+);
 
 /* =========================================================
    PROJECT ROUTES
