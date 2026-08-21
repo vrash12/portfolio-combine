@@ -11,6 +11,7 @@ const helmet = require("helmet");
 const { rateLimit } = require("express-rate-limit");
 const multer = require("multer");
 const fs = require("fs");
+const fsp = require("fs/promises");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -1045,6 +1046,87 @@ app.delete(
 
       return response.status(500).json({
         message: "Failed to remove all blog images.",
+      });
+    }
+  }
+);
+
+app.delete(
+  "/api/admin/orphaned-media",
+  requireAuth,
+  async function deleteOrphanedMedia(request, response) {
+    try {
+      if (request.body?.confirmation !== "REMOVE_ORPHANED_MEDIA") {
+        return response.status(400).json({
+          message: "Explicit confirmation is required.",
+        });
+      }
+
+      const referencedRows = await all(`
+        SELECT image AS filename
+        FROM blogs
+        WHERE image IS NOT NULL AND image <> ''
+        UNION
+        SELECT image AS filename
+        FROM blog_images
+        WHERE image IS NOT NULL AND image <> ''
+        UNION
+        SELECT image AS filename
+        FROM projects
+        WHERE image IS NOT NULL AND image <> ''
+        UNION
+        SELECT video AS filename
+        FROM projects
+        WHERE video IS NOT NULL AND video <> ''
+        UNION
+        SELECT image AS filename
+        FROM project_images
+        WHERE image IS NOT NULL AND image <> ''
+        UNION
+        SELECT video AS filename
+        FROM project_videos
+        WHERE video IS NOT NULL AND video <> ''
+      `);
+      const referencedFiles = new Set(
+        referencedRows.map((row) => row.filename).filter(Boolean)
+      );
+      const storedEntries = await fsp.readdir(uploadDir, {
+        withFileTypes: true,
+      });
+      const orphanedFiles = storedEntries
+        .filter(
+          (entry) => entry.isFile() && !referencedFiles.has(entry.name)
+        )
+        .map((entry) => entry.name);
+
+      const deletionResults = await Promise.allSettled(
+        orphanedFiles.map((filename) => deleteMediaFile(filename))
+      );
+      const removedFiles = orphanedFiles.filter(
+        (_filename, index) => deletionResults[index].status === "fulfilled"
+      );
+      const failedFileDeletes = deletionResults.filter(
+        (result) => result.status === "rejected"
+      );
+
+      for (const failure of failedFileDeletes) {
+        console.error("Failed to remove orphaned media:", failure.reason);
+      }
+
+      return response.json({
+        message: "Orphaned media cleanup completed.",
+        storedFilesScanned: storedEntries.filter((entry) => entry.isFile())
+          .length,
+        referencedFiles: referencedFiles.size,
+        filesRemoved: removedFiles.length,
+        failedFileDeletes: failedFileDeletes.length,
+        removedFiles,
+      });
+    } catch (error) {
+      console.error("Failed to remove orphaned media:", error);
+
+      return response.status(500).json({
+        message: "Failed to remove orphaned media.",
       });
     }
   }
