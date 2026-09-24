@@ -1,0 +1,7 @@
+node_modules/
+.env
+
+# Local working files, not part of the app
+hostinger-media-restore/
+portfolio-images-curated/
+portfolio-images-curated.zip
