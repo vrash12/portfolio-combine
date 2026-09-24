@@ -1,0 +1,276 @@
+/* Shared interaction feedback, layered after the page styles. */
+:root {
+  --motion-fast: 160ms;
+  --motion-normal: 260ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 5px;
+}
+
+:is(.btn, .tag-button, .nav-link, .nav-button, .nav-menu-toggle,
+  .neo-modal-close, .neo-modal-nav, .project-modal-close, .project-modal-nav) {
+  touch-action: manipulation;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    scale var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
+.btn:active:not(:disabled),
+.tag-button:active:not(:disabled),
+.nav-menu-toggle:active:not(:disabled) {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 2px 2px 0 var(--black) !important;
+}
+
+.nav-link:active,
+.nav-button:active:not(:disabled),
+.neo-modal-close:active,
+.neo-modal-nav:active:not(:disabled),
+.project-modal-close:active,
+.project-modal-nav:active:not(:disabled) {
+  scale: 0.96;
+}
+
+.btn:disabled,
+.tag-button:disabled,
+.nav-menu-toggle:disabled {
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+:is(.read-more, .blog-latest-link, .project-card-links a,
+  .about-contact-mini-grid a, .footer-links a) {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 2px;
+  transition: text-decoration-color var(--motion-fast) ease,
+    color var(--motion-fast) ease;
+}
+
+.read-more:hover,
+.read-more:focus-visible,
+.blog-latest-link:hover,
+.blog-latest-link:focus-visible,
+.project-card-links a:hover,
+.project-card-links a:focus-visible,
+.about-contact-mini-grid a:hover,
+.about-contact-mini-grid a:focus-visible,
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  text-decoration-color: var(--orange);
+}
+
+form :is(input, textarea, select) {
+  transition: border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
+}
+
+form label {
+  transition: color var(--motion-fast) ease;
+}
+
+:is(.about-contact-form, .blog-form, .login-form) label:focus-within {
+  color: #a14400;
+}
+
+form :is(input, textarea, select):focus-visible {
+  outline: 2px solid #ae4b00;
+  outline-offset: 3px;
+}
+
+form :is(input, textarea, select):user-invalid {
+  border-color: #b42318;
+}
+
+/* Card actions are equally discoverable with a keyboard. */
+.hover-project-card:focus-within .project-hover-overlay,
+.hover-blog-card:focus-within .blog-hover-overlay,
+.hover-blog-card:focus-within .blog-hover-overlay::before,
+.hover-blog-card:focus-within .blog-hover-kicker,
+.hover-blog-card:focus-within .blog-hover-button,
+.hover-blog-card:focus-within .blog-card-cta {
+  opacity: 1;
+  transform: none;
+}
+
+.project-hover-overlay:focus-visible,
+.blog-hover-overlay:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: -7px;
+}
+
+.adventure-gallery-item:focus-within .gallery-hover-label,
+.project-detail-gallery-item:focus-within .project-gallery-open-button span {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: none) {
+  .project-hover-overlay {
+    opacity: 1;
+    transform: none;
+    align-content: end;
+    justify-items: start;
+    background: linear-gradient(transparent 45%, rgba(0, 0, 0, 0.6));
+  }
+
+  .project-hover-kicker {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.about-skill-card, .about-experience-card, .about-summary-card,
+    .about-skills-workflow, .about-summary-tool-note, .flagship-card,
+    .project-detail-story-card, .project-detail-tech-card,
+    .education-card, .education-honors, .home-blog-card, .project-card) {
+    transition: transform var(--motion-normal) var(--motion-ease),
+      box-shadow var(--motion-normal) var(--motion-ease),
+      border-color var(--motion-normal) ease;
+  }
+
+  :is(.about-skill-card-top svg, .about-experience-role-title svg,
+    .about-summary-spark, .about-summary-step, .brand-logo-icon,
+    .about-experience-project-link > span, .flagship-case-link > span,
+    .education-degree-icon svg) {
+    transition: transform var(--motion-normal) var(--motion-ease),
+      background-color var(--motion-normal) ease,
+      box-shadow var(--motion-normal) ease;
+  }
+
+  :is(.about-skill-tags li, .about-experience-tags li,
+    .about-summary-domains li, .education-tags li) {
+    transition: border-color var(--motion-fast) ease,
+      background-color var(--motion-fast) ease;
+  }
+
+  .about-experience-project-link:hover > span,
+  .about-experience-project-link:focus-visible > span,
+  .flagship-case-link:hover > span,
+  .flagship-case-link:focus-visible > span {
+    transform: translate(2px, -2px);
+  }
+
+  .about-contact-form-card:focus-within {
+    transform: rotate(0deg);
+  }
+
+  .about-contact-form-card {
+    transition: transform var(--motion-normal) var(--motion-ease);
+  }
+
+  .project-image-modal-card,
+  .neo-modal-card {
+    animation: dialog-arrive 220ms var(--motion-ease) both;
+  }
+
+  .about-form-notice {
+    animation: feedback-arrive 220ms var(--motion-ease) both;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .flagship-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 6px 10px 0 var(--orange);
+    }
+
+    .about-skill-card:hover,
+    .about-experience-card:hover,
+    .about-summary-card:hover,
+    .about-skills-workflow:hover,
+    .about-summary-tool-note:hover,
+    .education-card:hover,
+    .education-honors:hover,
+    .project-detail-story-card:hover,
+    .project-detail-tech-card:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 9px 9px 0 var(--orange);
+    }
+
+    .about-skill-card:hover .about-skill-card-top svg,
+    .about-experience-card:hover .about-experience-role-title svg,
+    .education-card:hover .education-degree-icon svg {
+      transform: rotate(-7deg);
+    }
+
+    .about-summary-card:hover .about-summary-spark {
+      transform: rotate(57deg);
+    }
+
+    .about-summary-principles li:hover .about-summary-step {
+      transform: translateY(-2px);
+      background: var(--yellow);
+      box-shadow: 3px 5px 0 var(--black);
+    }
+
+    .neo-brand:hover .brand-logo-icon {
+      transform: rotate(-6deg);
+    }
+
+    .about-skill-tags li:hover,
+    .about-experience-tags li:hover,
+    .about-summary-domains li:hover,
+    .education-tags li:hover {
+      border-color: var(--orange);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .neo-navbar-links.is-open {
+      animation: feedback-arrive 180ms var(--motion-ease) both;
+    }
+  }
+}
+
+@keyframes dialog-arrive {
+  from { opacity: 0; translate: 0 10px; scale: 0.985; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+@keyframes feedback-arrive {
+  from { opacity: 0.5; translate: 0 -6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* This also covers the portfolio's existing hero and gallery animations. */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within,
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn:hover, .btn:active,
+  .tag-button:hover, .tag-button:active,
+  .nav-link:hover, .nav-link:active,
+  .nav-button:hover, .nav-button:active,
+  .nav-menu-toggle:hover, .nav-menu-toggle:active,
+  .neo-modal-close:hover, .neo-modal-close:active,
+  .neo-modal-nav:hover, .neo-modal-nav:active,
+  .project-modal-close:hover, .project-modal-close:active,
+  .project-modal-nav:hover, .project-modal-nav:active {
+    transform: none !important;
+    scale: none;
+  }
+}
