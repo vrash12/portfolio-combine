@@ -1,8 +1,11 @@
 import axios from "axios";
 
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_URL || "https://api.vrmsuliva.online"
-).replace(/\/$/, "");
+// The Express server hosts this app and its API on the same origin, so requests
+// use relative URLs. Set VITE_API_URL only when the API runs somewhere else.
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(
+  /\/$/,
+  ""
+);
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,

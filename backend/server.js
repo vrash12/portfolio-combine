@@ -1,6 +1,9 @@
 // backend/server.js
 
-require("dotenv").config({ quiet: true });
+const path = require("path");
+
+// Load backend/.env even when the app is started from the project root.
+require("dotenv").config({ path: path.join(__dirname, ".env"), quiet: true });
 
 const crypto = require("crypto");
 const express = require("express");
@@ -12,7 +15,6 @@ const { rateLimit } = require("express-rate-limit");
 const multer = require("multer");
 const fs = require("fs");
 const fsp = require("fs/promises");
-const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { authenticator } = require("otplib");
@@ -82,6 +84,15 @@ function parseFrontendOrigin(value) {
 
 const FRONTEND_ORIGIN = parseFrontendOrigin(FRONTEND_URL);
 
+// The React production build. When it exists, this server hosts the whole
+// site and the API from one origin, so a single Hostinger web app is enough.
+const FRONTEND_DIST_DIR = path.resolve(
+  process.env.FRONTEND_DIST_DIR ||
+    path.join(__dirname, "..", "frontend", "dist")
+);
+const FRONTEND_INDEX_FILE = path.join(FRONTEND_DIST_DIR, "index.html");
+const SERVE_FRONTEND = fs.existsSync(FRONTEND_INDEX_FILE);
+
 fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(stagingDir, { recursive: true });
 fs.mkdirSync(thumbnailDir, { recursive: true });
@@ -90,24 +101,123 @@ if (IS_PRODUCTION) {
   app.set("trust proxy", 1);
 }
 
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'none'"],
-        baseUri: ["'none'"],
-        frameAncestors: ["'none'"],
-        formAction: ["'none'"],
-      },
+function isBackendPath(requestPath) {
+  const normalizedPath = requestPath.toLowerCase();
+
+  return (
+    normalizedPath === "/api" ||
+    normalizedPath.startsWith("/api/") ||
+    normalizedPath.startsWith("/static/")
+  );
+}
+
+const hstsOptions = IS_PRODUCTION
+  ? { maxAge: 31536000, includeSubDomains: true, preload: false }
+  : false;
+
+const backendSecurityHeaders = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      frameAncestors: ["'none'"],
+      formAction: ["'none'"],
     },
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    frameguard: { action: "deny" },
-    hsts: IS_PRODUCTION
-      ? { maxAge: 31536000, includeSubDomains: true, preload: false }
-      : false,
-    referrerPolicy: { policy: "no-referrer" },
-  })
-);
+  },
+  crossOriginResourcePolicy: { policy: "same-site" },
+  frameguard: { action: "deny" },
+  hsts: hstsOptions,
+  referrerPolicy: { policy: "no-referrer" },
+});
+
+const frontendSecurityHeaders = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      imgSrc: ["'self'", "data:"],
+      mediaSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      upgradeInsecureRequests: IS_PRODUCTION ? [] : null,
+    },
+  },
+  crossOriginResourcePolicy: { policy: "same-origin" },
+  frameguard: { action: "deny" },
+  hsts: hstsOptions,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+});
+
+app.use(function securityHeaders(request, response, next) {
+  if (isBackendPath(request.path)) {
+    backendSecurityHeaders(request, response, next);
+    return;
+  }
+
+  response.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  );
+  frontendSecurityHeaders(request, response, next);
+});
+
+app.use(compression({ threshold: 1024 }));
+
+function setFrontendCacheHeaders(response, filePath) {
+  const relativePath = path
+    .relative(FRONTEND_DIST_DIR, filePath)
+    .split(path.sep)
+    .join("/");
+
+  if (relativePath === "index.html") {
+    response.set("Cache-Control", "no-cache");
+  } else if (relativePath.startsWith("assets/")) {
+    // Vite fingerprints every file in assets/, so its content never changes.
+    response.set("Cache-Control", "public, max-age=31536000, immutable");
+  } else if (/\.(?:webp|avif|svg|woff2?)$/i.test(relativePath)) {
+    response.set("Cache-Control", "public, max-age=2592000");
+  }
+}
+
+if (SERVE_FRONTEND) {
+  const serveFrontendFile = express.static(FRONTEND_DIST_DIR, {
+    dotfiles: "ignore",
+    index: false,
+    redirect: false,
+    setHeaders: setFrontendCacheHeaders,
+  });
+
+  app.use(function frontendFiles(request, response, next) {
+    if (isBackendPath(request.path)) {
+      next();
+      return;
+    }
+
+    serveFrontendFile(request, response, next);
+  });
+
+  // Page routes such as /projects/3 get the app shell and React Router renders
+  // them. Paths with a file extension are missing files, so they fall through
+  // to a 404 instead of returning HTML.
+  app.use(function frontendApp(request, response, next) {
+    if (
+      !["GET", "HEAD"].includes(request.method) ||
+      isBackendPath(request.path) ||
+      path.extname(request.path)
+    ) {
+      next();
+      return;
+    }
+
+    response.set("Cache-Control", "no-cache");
+    response.sendFile(FRONTEND_INDEX_FILE);
+  });
+}
 
 app.use(
   cors({
@@ -128,7 +238,6 @@ app.use(
   })
 );
 
-app.use(compression({ threshold: 1024 }));
 app.use(cookieParser());
 app.use(express.json({ limit: "64kb", strict: true }));
 app.use(express.urlencoded({ extended: false, limit: "64kb" }));
@@ -569,11 +678,14 @@ function loginAccountLimiter(request, response, next) {
   next();
 }
 
-app.get("/", function home(request, response) {
-  response.json({
-    message: "Portfolio Adventure Blog API is running.",
+if (!SERVE_FRONTEND) {
+  // API-only mode: no frontend build was found next to the backend.
+  app.get("/", function home(request, response) {
+    response.json({
+      message: "Portfolio Adventure Blog API is running.",
+    });
   });
-});
+}
 
 app.get("/api/health", function health(request, response) {
   response.json({
@@ -1712,7 +1824,14 @@ async function startServer() {
     await ensureProjectMediaSchema();
 
     app.listen(PORT, function listen() {
-      console.log(`Adventure Blog API running at http://localhost:${PORT}`);
+      if (SERVE_FRONTEND) {
+        console.log(`Portfolio site and API running at http://localhost:${PORT}`);
+      } else {
+        console.log(
+          `Adventure Blog API running at http://localhost:${PORT} ` +
+            `(no frontend build at ${FRONTEND_DIST_DIR})`
+        );
+      }
     });
   } catch (error) {
     console.error("Failed to start server:", error);

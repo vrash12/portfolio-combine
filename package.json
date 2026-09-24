@@ -1,0 +1,17 @@
+{
+  "name": "vrms-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Van Rodolf M. Suliva portfolio. The Express backend serves the React frontend, so the whole site deploys as one Node.js app.",
+  "scripts": {
+    "postinstall": "npm --prefix backend install && npm --prefix frontend install --include=dev",
+    "build": "npm --prefix frontend run build",
+    "start": "node backend/server.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "test": "npm --prefix backend test"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

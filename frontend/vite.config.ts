@@ -3,6 +3,14 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // In development, forward API and media requests to the local Express
+    // server so the app uses the same relative URLs as in production.
+    proxy: {
+      "/api": "http://localhost:5000",
+      "/static": "http://localhost:5000",
+    },
+  },
   build: {
     target: "es2020",
     sourcemap: false,

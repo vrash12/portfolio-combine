@@ -10,6 +10,19 @@ process.env.NODE_ENV = "test";
 process.env.FRONTEND_URL = "http://localhost:5173";
 process.env.JWT_SECRET = "test-only-secret-that-is-longer-than-thirty-two-characters";
 
+const frontendDistDir = fs.mkdtempSync(path.join(os.tmpdir(), "vrms-frontend-test-"));
+fs.mkdirSync(path.join(frontendDistDir, "assets"));
+fs.writeFileSync(
+  path.join(frontendDistDir, "index.html"),
+  '<!doctype html><title>VRMS</title><div id="root"></div>'
+);
+fs.writeFileSync(path.join(frontendDistDir, "assets", "index-AbCd1234.js"), "void 0;");
+process.env.FRONTEND_DIST_DIR = frontendDistDir;
+
+test.after(() => {
+  fs.rmSync(frontendDistDir, { recursive: true, force: true });
+});
+
 const { app } = require("../server");
 const { uploadDir } = require("../media");
 const { detectAllowedType } = require("../upload-security");
@@ -23,6 +36,47 @@ test("security headers are enabled and Express is hidden", async () => {
   assert.equal(response.headers["x-frame-options"], "DENY");
   assert.equal(response.headers["referrer-policy"], "no-referrer");
   assert.match(response.headers["content-security-policy"], /default-src 'none'/);
+});
+
+test("the React app is served from the same origin with a page CSP", async () => {
+  const response = await request(app)
+    .get("/")
+    .expect(200)
+    .expect("Content-Type", /html/);
+
+  assert.match(response.text, /<div id="root">/);
+  assert.equal(response.headers["cache-control"], "no-cache");
+  assert.equal(response.headers["x-frame-options"], "DENY");
+
+  const csp = response.headers["content-security-policy"];
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /connect-src 'self'/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.match(csp, /object-src 'none'/);
+});
+
+test("page routes load the app shell while API and file misses stay 404", async () => {
+  const page = await request(app)
+    .get("/projects/3")
+    .expect(200)
+    .expect("Content-Type", /html/);
+  assert.match(page.text, /<div id="root">/);
+
+  for (const missingPath of [
+    "/api/not-a-route",
+    "/static/images/missing.png",
+    "/assets/missing-chunk.js",
+  ]) {
+    const response = await request(app).get(missingPath).expect(404);
+    assert.doesNotMatch(response.text, /<div id="root">/);
+  }
+});
+
+test("fingerprinted frontend assets are cached immutably", async () => {
+  const response = await request(app).get("/assets/index-AbCd1234.js").expect(200);
+
+  assert.match(response.headers["cache-control"], /max-age=31536000/);
+  assert.match(response.headers["cache-control"], /immutable/);
 });
 
 test("CORS permits the configured frontend and rejects other origins", async () => {
