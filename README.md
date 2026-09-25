@@ -54,7 +54,7 @@ Environment variables are the ones in `backend/.env.example`, with
 
 ### Uploaded media
 
-Hostinger replaces the deploy folder on every deploy. Media committed to git in
-`backend/public/static/images` comes back each time, but images uploaded through
-the admin pages are lost on the next deploy unless `MEDIA_ROOT` points to a
-folder outside the deploy directory (see `backend/.env.example`).
+Uploaded images and videos are not in git. On Hostinger they live in
+`/home/<hostinger-user>/portfolio-media`, outside the deploy folder, which Hostinger
+replaces on every deploy. `MEDIA_ROOT` points the app at that folder (see
+`backend/.env.example`). Locally, uploads go to `backend/public/static/images`.

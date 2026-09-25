@@ -5,3 +5,6 @@ node_modules/
 npm-debug.log*
 storage/
 *.optimized.mp4
+
+# Uploaded media lives in MEDIA_ROOT on the server, not in git.
+public/static/images/
