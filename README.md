@@ -44,10 +44,11 @@ Create one Node.js web app for `vrmsuliva.online` with these build settings:
 | Node.js version  | 22                                                  |
 | Build command    | `npm run build`                                     |
 | Output directory | leave empty                                         |
-| Entry file       | `backend/server.js`                                 |
+| Entry file       | `server.js` (it loads `backend/server.js`)          |
 
 Hostinger runs `npm install` (its `postinstall` step installs `backend/` and
-`frontend/`), then the build, then starts `backend/server.js`.
+`frontend/`), then the build, then starts `server.js`. The output directory
+must stay empty: with one set, Hostinger deploys only that folder.
 
 Environment variables are the ones in `backend/.env.example`, with
 `FRONTEND_URL=https://vrmsuliva.online`.
