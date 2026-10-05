@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import type { Project } from "../types";
 import ProjectCard from "../components/ProjectCard";
 import { getPreferredProjectDescription } from "../data/projectCaseStudies";
+import { curatedProjects, mergeCuratedProjects } from "../data/portfolioProjects";
 
 function formatDate(date?: string | null) {
   if (!date) return "Recently added";
@@ -16,7 +17,7 @@ function formatDate(date?: string | null) {
 }
 
 function Projects() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(curatedProjects);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -25,10 +26,11 @@ function Projects() {
     api
       .get<Project[]>("/projects")
       .then((response) => {
-        setProjects(response.data);
+        setProjects(mergeCuratedProjects(response.data));
       })
       .catch((error) => {
         console.error("Failed to fetch projects:", error);
+        setProjects(curatedProjects);
         setErrorMessage("Failed to load projects. Please check your backend.");
       })
       .finally(() => {
@@ -247,7 +249,7 @@ function Projects() {
           <div className="collection-empty-state">
             <p>Loading projects...</p>
           </div>
-        ) : errorMessage ? (
+        ) : errorMessage && filteredProjects.length === 0 ? (
           <div className="collection-empty-state">
             <p>{errorMessage}</p>
           </div>

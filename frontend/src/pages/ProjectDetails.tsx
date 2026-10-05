@@ -15,6 +15,7 @@ import {
   PROJECT_OWNERSHIP_STATEMENT,
   type ProjectCaseStudy,
 } from "../data/projectCaseStudies";
+import { getCuratedProject } from "../data/portfolioProjects";
 
 type ProjectVideo = {
   id: number;
@@ -151,6 +152,14 @@ function ProjectDetails() {
   );
 
   useEffect(() => {
+    const curatedProject = getCuratedProject(id);
+
+    if (curatedProject) {
+      setProject(curatedProject);
+      setLoading(false);
+      return;
+    }
+
     api
       .get<ProjectWithMedia>(`/projects/${id}`)
       .then((response) => {

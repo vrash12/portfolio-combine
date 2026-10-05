@@ -5,6 +5,7 @@ import { api, getThumbnailUrl } from "../api/client";
 import type { BlogPost, Project } from "../types";
 import FlagshipCaseStudies from "../components/FlagshipCaseStudies";
 import { getPreferredBlogDescription } from "../data/blogEditorialContent";
+import { curatedProjects, mergeCuratedProjects } from "../data/portfolioProjects";
 
 const skillPath = "/images/logos-skill";
 
@@ -186,7 +187,7 @@ function getBlogCoverImage(post: BlogPost) {
 function Home() {
   const [isHeroFlipped, setIsHeroFlipped] = useState(false);
 
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(curatedProjects);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
 
   const [blogsLoading, setBlogsLoading] = useState(true);
@@ -197,10 +198,11 @@ function Home() {
     api
       .get<Project[]>("/projects")
       .then((response) => {
-        setProjects(response.data);
+        setProjects(mergeCuratedProjects(response.data));
       })
       .catch((error) => {
         console.error("Failed to load projects:", error);
+        setProjects(curatedProjects);
       });
 
     api

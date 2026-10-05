@@ -1,11 +1,8 @@
 import axios from "axios";
 
-// The Express server hosts this app and its API on the same origin, so requests
-// use relative URLs. Set VITE_API_URL only when the API runs somewhere else.
-export const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(
-  /\/$/,
-  ""
-);
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "https://api.vrmsuliva.online"
+).replace(/\/$/, "");
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -32,6 +29,10 @@ export function getImageUrl(image?: string | null) {
     return image;
   }
 
+  if (image.startsWith("/images/")) {
+    return image;
+  }
+
   if (image.startsWith("/static")) {
     return `${API_BASE_URL}${image}`;
   }
@@ -46,6 +47,10 @@ export function getThumbnailUrl(
   if (!image) return "";
 
   if (image.startsWith("http")) {
+    return image;
+  }
+
+  if (image.startsWith("/images/")) {
     return image;
   }
 

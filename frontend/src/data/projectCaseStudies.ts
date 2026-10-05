@@ -191,6 +191,117 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
       "Operational case management and AI assistance remain separated, maintainable, and independently deployable",
     proofLabel: "Review system architecture",
   },
+  {
+    matchTitle: "AgriGOV Agriculture Information System",
+    projectId: 9001,
+    fallbackImage: "/images/projects/agrigov-cover.jpg",
+    label: "Municipality-aware agriculture platform",
+    title: "AgriGOV Agriculture Information System",
+    summary:
+      "A secure agriculture operations platform that connects farmer registry, GIS parcel mapping, assistance, animal health, machinery, reporting, and audit workflows across supervised municipalities.",
+    problem:
+      "Agriculture offices need a dependable way to coordinate farmer records, mapped parcels, assistance releases, animal-health services, equipment, and reports while keeping each municipality's operational data separated.",
+    contribution:
+      "I designed and implemented the end-to-end Laravel system, including role-based workspaces, municipality-scoped workflows, farmer and parcel management, program records, exports, dashboards, protected files, and audit coverage.",
+    architecture:
+      "Laravel and MySQL provide the application and data layer. Blade, Tailwind CSS, and JavaScript support responsive office workflows, while Google Maps and GIS geometry power parcel mapping, municipality boundaries, and public QR land verification.",
+    technologies: [
+      "Laravel",
+      "PHP",
+      "MySQL",
+      "Blade",
+      "Tailwind CSS",
+      "JavaScript",
+      "Google Maps",
+      "GIS",
+    ],
+    capabilities: [
+      {
+        title: "Farmer registry and identity",
+        description:
+          "Maintains farmer profiles, source-row history, classifications, assistance history, digital IDs, and privacy-limited public QR verification.",
+      },
+      {
+        title: "GIS parcel workspace",
+        description:
+          "Maps farm parcels, validates geometry against official municipality boundaries, and surfaces unmapped or boundary-sensitive records.",
+      },
+      {
+        title: "Agriculture and animal services",
+        description:
+          "Tracks agriculture and fisheries assistance, distribution sheets, animal-health services, cooperatives, and machinery inventory.",
+      },
+      {
+        title: "Decision-ready operations",
+        description:
+          "Provides scoped dashboards, charts, exports, weather links, protected backups, account controls, and audit trails for office decisions.",
+      },
+    ],
+    delivery: [
+      "Role and municipality isolation enforced on protected reads, writes, maps, files, and exports",
+      "Validation, throttling, CSRF protection, audit redaction, and concurrency safeguards for operational workflows",
+      "Responsive states, report tables, spreadsheet-safe exports, and documented deployment and backup procedures",
+    ],
+    result: "6 operational areas · 7 supported roles",
+    resultLabel:
+      "A single system coordinates farmer services and agriculture-office oversight without losing municipality boundaries",
+    proofLabel: "Explore system architecture",
+  },
+  {
+    matchTitle: "Servalyn",
+    projectId: 9002,
+    fallbackImage: "/images/projects/servalyn-cover.png",
+    label: "Editorial digital-studio website",
+    title: "Servalyn",
+    summary:
+      "A bold, responsive studio website that turns a service catalog into an interactive story with animated previews, structured content, and a guided project inquiry flow.",
+    problem:
+      "A digital studio needs to explain a broad range of capabilities without feeling like a generic agency page, while still giving visitors a clear path from curiosity to a useful project brief.",
+    contribution:
+      "I designed and built the complete experience, from the editorial visual system and responsive layout to the interactive service index, buildable selections, contact form, SEO metadata, structured data, and pre-rendered HTML.",
+    architecture:
+      "React and TypeScript drive the interactive page, Vite builds the production bundle and server-rendered HTML, and component-level CSS handles the visual system, motion, responsive layouts, and reduced-motion behavior without a UI library.",
+    technologies: [
+      "React",
+      "TypeScript",
+      "Vite",
+      "SSR pre-rendering",
+      "SEO",
+      "Accessible HTML",
+      "Responsive CSS",
+    ],
+    capabilities: [
+      {
+        title: "Interactive service story",
+        description:
+          "A six-service index expands in place and keeps the hero preview synchronized with the visitor's current area of interest.",
+      },
+      {
+        title: "Guided project selection",
+        description:
+          "Visitors can pick the type of work they need and carry those selections into the contact form as a clearer starting brief.",
+      },
+      {
+        title: "Performance and discoverability",
+        description:
+          "Pre-rendered HTML, generated metadata, structured data, lazy-loaded toolbox assets, and a sitemap support search and fast first render.",
+      },
+      {
+        title: "Accessible interaction",
+        description:
+          "Skip links, focus states, labelled errors, keyboard navigation, native disclosures, and reduced-motion support keep the experience usable.",
+      },
+    ],
+    delivery: [
+      "Responsive desktop and mobile layouts with a focus-trapped navigation menu",
+      "Contact validation with email-draft fallback and optional endpoint mode",
+      "Reduced-motion behavior, SEO files, Open Graph assets, and production build documentation",
+    ],
+    result: "6 services · 72 toolbox technologies",
+    resultLabel:
+      "A distinctive studio presence that explains what can be built and helps visitors begin the right conversation",
+    proofLabel: "Review the live experience",
+  },
 ];
 
 export function getProjectCaseStudy(
