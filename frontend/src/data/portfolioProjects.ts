@@ -12,6 +12,26 @@ export const curatedProjects: Project[] = [
     description:
       "A municipality-aware agriculture operations platform that brings farmer records, GIS parcel mapping, assistance releases, animal-health services, cooperatives, machinery monitoring, reports, and audit trails into one secure Laravel system.",
     image: "/images/projects/agrigov-cover.jpg",
+    images: [
+      {
+        id: 900101,
+        project_id: 9001,
+        image: "/images/projects/agrigov-landing.png",
+        caption: "AgriGOV public landing page and farmer services",
+      },
+      {
+        id: 900102,
+        project_id: 9001,
+        image: "/images/projects/agrigov-dashboard.png",
+        caption: "Operations dashboard and agriculture assistance overview",
+      },
+      {
+        id: 900103,
+        project_id: 9001,
+        image: "/images/projects/agrigov-parcel-map.png",
+        caption: "GIS parcel map and municipality boundaries",
+      },
+    ],
     category: "Software Development",
     technologies:
       "Laravel, PHP, MySQL, Blade, Tailwind CSS, JavaScript, Google Maps, GIS",
