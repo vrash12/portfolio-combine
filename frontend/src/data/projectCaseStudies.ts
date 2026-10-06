@@ -28,6 +28,46 @@ export type ProjectCaseStudy = {
 
 export const flagshipCaseStudies: ProjectCaseStudy[] = [
   {
+    matchTitle: "FitQuest",
+    projectId: 9003,
+    fallbackImage: "/images/projects/fitquest-home.png",
+    label: "Camera-guided fitness and gamification",
+    title: "FitQuest",
+    summary:
+      "A mobile fitness app that turns home bodyweight workouts into a game, with real-time camera-based rep counting, form checks, spoken coaching, and progress shared through friends and challenges.",
+    problem:
+      "Home workouts need clear movement feedback and a reason to keep returning. FitQuest combines camera-guided exercise tracking with points, streaks, achievements, and social challenges to support consistent practice.",
+    contribution:
+      "I built the React Native and Expo mobile experience, connected Google ML Kit Pose Detection through a custom Kotlin Expo native module, and implemented a Flask REST API for login, profiles, workout records, and social data.",
+    architecture:
+      "React Native 0.81 and Expo SDK 54 provide the TypeScript mobile client. Expo Router organizes tabs, onboarding, authentication, and workout screens. Zustand and React Context manage state, AsyncStorage persists the login token, and Axios calls the Flask REST API on port 5001. react-native-vision-camera supplies the live camera feed to Google ML Kit Pose Detection through the custom Kotlin module at modules/mlkit-pose. Expo Speech delivers coaching cues, with Expo Audio and Haptics for feedback. Flask-SQLAlchemy and SQLAlchemy 2 store profiles, workouts, and social data in SQLite by default, with MySQL through PyMySQL as an option. Flask-JWT-Extended handles login tokens; Flask-CORS and python-dotenv support configuration.",
+    technologies: [
+      "React Native 0.81", "Expo SDK 54", "TypeScript", "Expo Router",
+      "Zustand", "React Context", "AsyncStorage", "Axios",
+      "react-native-vision-camera", "Google ML Kit Pose Detection", "Kotlin",
+      "Expo Speech", "Expo Audio", "Expo Haptics", "react-native-svg",
+      "Expo Linear Gradient", "@expo/vector-icons", "Python", "Flask",
+      "Flask-SQLAlchemy", "SQLAlchemy 2", "Flask-JWT-Extended", "Flask-CORS",
+      "python-dotenv", "SQLite", "MySQL", "PyMySQL", "Gunicorn", "Docker",
+      "Android Studio", "Gradle", "ESLint", "Git",
+    ],
+    capabilities: [
+      { title: "Real-time movement feedback", description: "Uses the phone camera and pose detection to count reps and check form for 13 bodyweight exercises, including push-ups, squats, plank, lunges, and burpees." },
+      { title: "Spoken coaching", description: "Provides spoken coaching cues with audio and haptic feedback during workouts." },
+      { title: "Workout progression", description: "Turns workouts into points, levels, streaks, and achievements, with daily and weekly activity summaries." },
+      { title: "Social motivation", description: "Lets users add friends, follow their activity, and take on challenges together." },
+    ],
+    delivery: [
+      "Android development builds use Android Studio and Gradle for the custom Kotlin pose-detection module",
+      "Flask REST API deployment is supported by Gunicorn and a Dockerfile",
+      "SQLite is the default database, with optional MySQL support through PyMySQL",
+      "ESLint and Git support the development workflow",
+    ],
+    result: "13 exercises · real-time pose feedback",
+    resultLabel: "Camera-guided home workouts with game-like progression and social challenges",
+    proofLabel: "Explore the mobile app screenshots",
+  },
+  {
     matchTitle: "PGT Onboard",
     projectId: 11,
     fallbackImage: "1787360189802-fe4728fdd3e814b7f47ba680.png",

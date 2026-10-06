@@ -7,6 +7,25 @@ import type { Project } from "../types";
  */
 export const curatedProjects: Project[] = [
   {
+    id: 9003,
+    title: "FitQuest",
+    description:
+      "A mobile fitness app that turns home bodyweight workouts into a game. The phone camera and Google ML Kit pose detection count reps and check form in real time with spoken feedback. Workouts earn points, levels, streaks, and achievements, while friends, activity feeds, and shared challenges help users stay engaged.",
+    image: "/images/projects/fitquest-home.png",
+    images: [
+      { id: 900301, project_id: 9003, image: "/images/projects/fitquest-login.png", caption: "FitQuest welcome and login" },
+      { id: 900302, project_id: 9003, image: "/images/projects/fitquest-home.png", caption: "Home dashboard, workout activity, points, and streaks" },
+      { id: 900303, project_id: 9003, image: "/images/projects/fitquest-exercises.png", caption: "Exercise library with 13 bodyweight movements" },
+      { id: 900304, project_id: 9003, image: "/images/projects/fitquest-rewards.png", caption: "Rewards, levels, and workout achievements" },
+      { id: 900305, project_id: 9003, image: "/images/projects/fitquest-social.png", caption: "Community, friends, activity, and challenges" },
+    ],
+    category: "Mobile Development",
+    technologies:
+      "React Native 0.81, Expo SDK 54, TypeScript, Expo Router, Zustand, React Context, AsyncStorage, Axios, react-native-vision-camera, Google ML Kit Pose Detection, Kotlin, Expo Speech, Expo Audio, Expo Haptics, react-native-svg, Expo Linear Gradient, @expo/vector-icons, Python, Flask, Flask-SQLAlchemy, SQLAlchemy 2, Flask-JWT-Extended, Flask-CORS, python-dotenv, SQLite, MySQL, PyMySQL, Gunicorn, Docker, Android Studio, Gradle, ESLint, Git",
+    featured: 1,
+    published: 1,
+  },
+  {
     id: 9001,
     title: "AgriGOV Agriculture Information System",
     description:
