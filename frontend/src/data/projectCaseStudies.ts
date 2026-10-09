@@ -80,11 +80,12 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
     contribution:
       "I built the connected commuter and operations workflows, integrating live GPS and passenger data, ETA and schedule views, QR wallet ticketing, top-ups, announcements, and role-specific dashboards.",
     architecture:
-      "React Native clients communicate with Flask services, MQTT carries live telemetry from Arduino-based bus hardware, and Google Maps turns location data into clear commuter and operations views.",
+      "React Native clients communicate with Flask and MySQL through 120+ REST API routes across four role-based workflows. MQTT carries live GPS and passenger-count data from IoT hardware, with real-time ETA, QR e-ticketing, and a closed-loop wallet.",
     technologies: [
       "React Native",
       "Flask",
       "Python",
+      "MySQL",
       "MQTT",
       "Arduino",
       "Google Maps API",
@@ -113,6 +114,8 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
     ],
     delivery: [
       "Role-separated commuter, teller, officer, and manager journeys",
+      "Piloted across 3 minibuses with 23 seats each and validated by 69 stakeholders plus 3 IT professionals",
+      "Recorded 0.71-minute average ETA variance, correct APC counts at 8 of 10 stops, and a 4.70/5 commuter usability score",
       "Four recorded end-to-end demonstrations validate the core role flows",
       "Cloud-deployed backend connected to mobile clients and IoT hardware",
     ],
@@ -238,11 +241,11 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
     label: "Municipality-aware agriculture platform",
     title: "AgriGOV Agriculture Information System",
     summary:
-      "A secure agriculture operations platform that connects farmer registry, GIS parcel mapping, assistance, animal health, machinery, reporting, and audit workflows across supervised municipalities.",
+      "An agriculture information and GIS management system supporting 150+ farmer and land records, with municipality-scoped operations, farmer self-service, parcel maps, assistance history, and Sentinel-2 vegetation analysis.",
     problem:
       "Agriculture offices need a dependable way to coordinate farmer records, mapped parcels, assistance releases, animal-health services, equipment, and reports while keeping each municipality's operational data separated.",
     contribution:
-      "I designed and implemented the end-to-end Laravel system, including role-based workspaces, municipality-scoped workflows, farmer and parcel management, program records, exports, dashboards, protected files, and audit coverage.",
+      "I built and deployed AgriGOV during my February–May 2026 internship. Continued development from June 2026 to the present adds a farmer self-service portal for personal records, mapped parcels, seasonal crops, and assistance history, alongside protected office workflows.",
     architecture:
       "Laravel and MySQL provide the application and data layer. Blade, Tailwind CSS, and JavaScript support responsive office workflows, while Google Maps and GIS geometry power parcel mapping, municipality boundaries, and public QR land verification.",
     technologies: [
@@ -264,7 +267,7 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
       {
         title: "GIS parcel workspace",
         description:
-          "Maps farm parcels, validates geometry against official municipality boundaries, and surfaces unmapped or boundary-sensitive records.",
+          "Maps farm parcels with KML/KMZ imports and municipality boundaries. Copernicus Sentinel-2 imagery and NDVI analysis show vegetation maps, observation dates, and greenness statistics with plain-language explanations and cloud-data limitations.",
       },
       {
         title: "Agriculture and animal services",
@@ -278,7 +281,8 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
       },
     ],
     delivery: [
-      "Role and municipality isolation enforced on protected reads, writes, maps, files, and exports",
+      "70+ protected workflows enforce municipality-level data separation and province-scoped oversight with audit trails",
+      "Farmer self-service and public QR verification pages exclude sensitive internal records",
       "Validation, throttling, CSRF protection, audit redaction, and concurrency safeguards for operational workflows",
       "Responsive states, report tables, spreadsheet-safe exports, and documented deployment and backup procedures",
     ],

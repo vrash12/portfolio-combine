@@ -26,7 +26,8 @@ const skillGroups = [
     description: "APIs, authentication, and application logic behind the experience.",
     iconPath: "M3 3h18v7H3V3Zm0 11h18v7H3v-7Zm4-7h.01M7 17h.01M12 7h5m-5 10h5",
     items: [
-      "Django",
+      "Django REST Framework",
+      "REST APIs",
       "Laravel",
       "Flask",
       "Node.js",
@@ -45,7 +46,13 @@ const skillGroups = [
     title: "Embedded Systems / IoT",
     description: "Bringing software into the world of connected devices.",
     iconPath: "M6 6h12v12H6V6Zm3 3h6v6H9V9ZM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4",
-    items: ["Raspberry Pi", "Arduino"],
+    items: ["Raspberry Pi", "Arduino", "MQTT", "Google Maps Platform"],
+  },
+  {
+    title: "AI & Machine Learning",
+    description: "Integrating language models and visual intelligence into practical applications.",
+    iconPath: "M9 3h6v4H9V3ZM5 10h14v11H5V10Zm4 4h.01M15 14h.01M9 18h6M12 7v3M2 13h3m14 0h3",
+    items: ["OpenAI API", "Gemini API", "Claude", "LLM Integration", "Prompt Engineering", "Computer Vision", "Pose Estimation", "AI-Assisted Application Development"],
   },
   {
     title: "Networking & OS",
@@ -57,7 +64,7 @@ const skillGroups = [
     title: "Databases & ORM",
     description: "Database schemas, structured storage, and queries that connect data to applications.",
     iconPath: "M20 5c0 2-3.6 3-8 3S4 7 4 5s3.6-3 8-3 8 1 8 3ZM4 5v14c0 2 3.6 3 8 3s8-1 8-3V5M4 12c0 2 3.6 3 8 3s8-1 8-3",
-    items: ["MySQL", "PostgreSQL", "Drizzle ORM"],
+    items: ["MySQL", "PostgreSQL", "SQLite", "Drizzle ORM"],
   },
 ];
 
@@ -79,15 +86,15 @@ const workflowGroups = [
 const achievements = [
   {
     title: "Magna Cum Laude",
-    detail: "Graduated July 31, 2026",
+    detail: "Graduated July 2026",
   },
   {
     title: "Best Capstone Project",
-    detail: "2026",
+    detail: "PGT Onboard, 2026",
   },
   {
     title: "3rd Place · STEM Category",
-    detail: "Saliksiklaban University-wide Undergraduate Research Competition, 2026",
+    detail: "Saliksiklaban University-wide Undergraduate Research Competition, 2026 — Digital Transformation of Public Transport: Vehicle Tracking and Electronic Payment Solutions (PGT Onboard)",
   },
 ];
 
@@ -195,9 +202,10 @@ ${contactForm.message}
             enjoys working across web, mobile, backend, AI,
             databases, cloud, and IoT. I’m also passionate
             about research that turns real-world problems into
-            practical, evidence-based technology. I am
-            currently pursuing my Master in Information
-            Technology at Tarlac State University.
+            practical, evidence-based technology. I graduated
+            from Tarlac State University with a Bachelor of
+            Science in Information Technology, specializing
+            in Network and Administration, Magna Cum Laude.
           </p>
 
           <div className="about-hero-actions">
@@ -470,43 +478,9 @@ ${contactForm.message}
           </div>
 
           <div className="education-degrees">
-            <article className="education-card education-card-graduate">
-              <div className="education-card-top">
-                <p className="education-level"><span aria-hidden="true">01 /</span> Graduate studies</p>
-                <span className="education-status education-status-current">
-                  <span aria-hidden="true" /> In progress
-                </span>
-              </div>
-              <div className="education-degree-heading">
-                <span className="education-degree-icon" aria-hidden="true">
-                  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 7c5-2 9-1 13 2 4-3 8-4 13-2v20c-5-2-9-1-13 2-4-3-8-4-13-2V7Zm13 2v20M7 12l5 1m-5 5 5 1m8-6 5-1m-5 7 5-1" />
-                  </svg>
-                </span>
-                <h3>Master in <span>Information Technology</span></h3>
-              </div>
-              <div className="education-institution">
-                <strong>Tarlac State University</strong>
-                <p><time dateTime="2026-08">August 2026</time> — Present</p>
-              </div>
-              <p className="education-description">
-                Pursuing graduate studies to deepen my knowledge of software
-                development, information systems, networking, and modern
-                technology solutions.
-              </p>
-              <div className="education-focus">
-                <h4>Exploring further</h4>
-                <ul className="education-tags" aria-label="Graduate study focus areas">
-                  <li>Information systems</li>
-                  <li>Software development</li>
-                  <li>Networking</li>
-                </ul>
-              </div>
-            </article>
-
             <article className="education-card education-card-undergraduate">
               <div className="education-card-top">
-                <p className="education-level"><span aria-hidden="true">02 /</span> Undergraduate</p>
+                <p className="education-level"><span aria-hidden="true">01 /</span> Undergraduate</p>
                 <span className="education-status">Completed</span>
               </div>
               <div className="education-degree-heading">
@@ -555,6 +529,21 @@ ${contactForm.message}
                   </div>
                 </li>
               ))}
+            </ul>
+          </aside>
+
+          <aside className="education-honors" aria-labelledby="education-certifications-title">
+            <div className="education-honors-heading">
+              <h3 id="education-certifications-title">Certifications</h3>
+              <span>2026</span>
+            </div>
+            <ul className="education-honors-list education-certifications-list">
+              <li>
+                <div>
+                  <h4>Freelancer Stakeholders Enablement</h4>
+                  <p>Department of Information and Communications Technology (DICT), Cordillera Administrative Region — ICT Industry Development Bureau</p>
+                </div>
+              </li>
             </ul>
           </aside>
         </div>
@@ -666,11 +655,50 @@ ${contactForm.message}
           </div>
 
           <div className="about-experience-grid">
+            <article className="about-experience-card about-experience-freelance">
+              <header className="about-experience-role">
+                <div className="about-experience-meta">
+                  <span className="about-experience-category">
+                    <span aria-hidden="true">01 /</span> Client websites
+                  </span>
+                  <span className="about-experience-date">
+                    <time dateTime="2026-06">June 2026</time> - <time dateTime="2026-09">September 2026</time>
+                  </span>
+                </div>
+                <div className="about-experience-role-title">
+                  <h3>Independent Contractor <span>Web Design and Software Development</span></h3>
+                </div>
+                <p className="about-experience-company">Independent Contract Work</p>
+              </header>
+              <div className="about-experience-details">
+                <p className="about-experience-label">What I delivered</p>
+                <h4>Responsive company websites built around client needs.</h4>
+                <p className="about-experience-description">
+                  Designed and developed websites for telecommunications,
+                  infrastructure, and business clients using Figma, React,
+                  Next.js, and Supabase.
+                </p>
+                <ul className="about-experience-highlights">
+                  <li>
+                    <strong>CTS Pacific &amp; CO Pacific</strong>
+                    <span>Delivered company website projects with service pages and responsive layouts.</span>
+                  </li>
+                  <li>
+                    <strong>Clear paths to an inquiry</strong>
+                    <span>Built navigation and inquiry workflows to connect visitors with the business.</span>
+                  </li>
+                </ul>
+                <ul className="about-experience-tags" aria-label="Contractor focus areas">
+                  <li>Figma</li><li>React</li><li>Next.js</li><li>Supabase</li>
+                </ul>
+              </div>
+            </article>
+
             <article className="about-experience-card about-experience-intern">
               <header className="about-experience-role">
                 <div className="about-experience-meta">
                   <span className="about-experience-category">
-                    <span aria-hidden="true">01 /</span> Public service
+                    <span aria-hidden="true">02 /</span> Public service
                   </span>
                   <span className="about-experience-date">
                     <time dateTime="2026-02">Feb 2026</time>
@@ -694,22 +722,22 @@ ${contactForm.message}
                 <p className="about-experience-label">What I delivered</p>
                 <h4>One system for a more connected agriculture office.</h4>
                 <p className="about-experience-description">
-                  Developed and implemented a custom management
-                  system to bring essential agricultural records
-                  into one place.
+                  Built and deployed AgriGOV, a Laravel and MySQL
+                  agriculture information system supporting 150+
+                  farmer and land records.
                 </p>
                 <ul className="about-experience-highlights">
                   <li>
                     <strong>Centralized records</strong>
-                    <span>Farmer profiles, rice seed distribution, and cooperative data.</span>
+                    <span>Farmer registration, agricultural assistance, animal-health services, cooperatives, and machinery management.</span>
                   </li>
                   <li>
                     <strong>Mapping that adds context</strong>
-                    <span>Google Maps API integration for land plotting and farm locations.</span>
+                    <span>Interactive GIS parcel maps, KML/KMZ imports, and QR-enabled farmer registry cards.</span>
                   </li>
                   <li>
-                    <strong>Smoother daily workflows</strong>
-                    <span>Tools to improve record tracking, reporting, and office operations.</span>
+                    <strong>Protected workflows &amp; reporting</strong>
+                    <span>Role-based access across 70+ protected workflows, municipality-level data separation, province-scoped oversight, audit trails, dashboards, and Excel/CSV reports.</span>
                   </li>
                 </ul>
                 <ul className="about-experience-tags" aria-label="Internship focus areas">
@@ -724,10 +752,10 @@ ${contactForm.message}
               <header className="about-experience-role">
                 <div className="about-experience-meta">
                   <span className="about-experience-category">
-                    <span aria-hidden="true">02 /</span> Independent work
+                    <span aria-hidden="true">03 /</span> Independent work
                   </span>
                   <span className="about-experience-date">
-                    <time dateTime="2024">2024</time> — Present
+                    <time dateTime="2024">2024</time> - <time dateTime="2026-09">September 2026</time>
                   </span>
                 </div>
                 <div className="about-experience-role-title">
@@ -739,19 +767,17 @@ ${contactForm.message}
                 </div>
                 <p className="about-experience-company">
                   Self-Employed
-                  <span className="about-experience-current">
-                    <span aria-hidden="true" /> Ongoing
-                  </span>
                 </p>
               </header>
 
               <div className="about-experience-details">
-                <p className="about-experience-label">How I help clients</p>
+                <p className="about-experience-label">How I helped clients</p>
                 <h4>From the first conversation to the next release.</h4>
                 <p className="about-experience-description">
-                  Develop web and mobile applications for
-                  clients, with hands-on involvement throughout
-                  the development process.
+                  Developed and delivered 15+ web and mobile
+                  applications for clients, handling requirements,
+                  UI/UX, development, testing, deployment, and
+                  maintenance from end to end.
                 </p>
                 <ul className="about-experience-highlights">
                   <li>
@@ -760,11 +786,11 @@ ${contactForm.message}
                   </li>
                   <li>
                     <strong>Build &amp; deliver</strong>
-                    <span>Application development, deployment, and documentation.</span>
+                    <span>Full-stack applications with REST APIs, relational databases, authentication, reporting, and cloud hosting.</span>
                   </li>
                   <li>
                     <strong>Support &amp; improve</strong>
-                    <span>Bug fixes, ongoing improvements, and new features as needs evolve.</span>
+                    <span>Bug fixes, improvements, and new features based on client needs.</span>
                   </li>
                 </ul>
                 <ul className="about-experience-tags" aria-label="Freelance focus areas">

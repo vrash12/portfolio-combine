@@ -12028,3 +12028,12 @@ h4,
     flex-direction: column;
   }
 }
+
+/* Resume education and certification cards reuse the existing visual system. */
+.education-degrees > :only-child {
+  grid-column: 1 / -1;
+}
+
+.education-certifications-list {
+  grid-template-columns: minmax(0, 1fr);
+}
