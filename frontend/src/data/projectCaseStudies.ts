@@ -71,7 +71,7 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
   },
   {
     matchTitle: "Co Pacific",
-    projectId: 9004,
+    projectId: 12,
     fallbackImage: "/images/projects/copacific-home.jpg",
     fallbackLiveUrl: "https://copacific.org/",
     liveLinkLabel: "Visit copacific.org",

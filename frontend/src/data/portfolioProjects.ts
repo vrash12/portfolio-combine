@@ -26,7 +26,7 @@ export const curatedProjects: Project[] = [
     published: 1,
   },
   {
-    id: 9004,
+    id: 12,
     title: "Co Pacific Distributors",
     description:
       "A commercial kitchen equipment and parts website rebuilt from a static site into WordPress, with an editable 32-brand, 211-product catalog, instant search, customer request flows, technical SEO, and a verified Hostinger deployment.",
@@ -40,31 +40,31 @@ export const curatedProjects: Project[] = [
     images: [
       {
         id: 90031,
-        project_id: 9004,
+        project_id: 12,
         image: "/images/projects/copacific-home.jpg",
         caption: "Responsive homepage and custom Co Pacific theme",
       },
       {
         id: 90032,
-        project_id: 9004,
+        project_id: 12,
         image: "/images/projects/copacific-parts.jpg",
         caption: "Parts hub with brand discovery, model search, and category filters",
       },
       {
         id: 90033,
-        project_id: 9004,
+        project_id: 12,
         image: "/images/projects/copacific-product.jpg",
         caption: "Product gallery, specifications, and parts-request actions",
       },
       {
         id: 90034,
-        project_id: 9004,
+        project_id: 12,
         image: "/images/projects/copacific-contact.jpg",
         caption: "Parts-request form with equipment details and photo upload",
       },
       {
         id: 90035,
-        project_id: 9004,
+        project_id: 12,
         image: "/images/projects/copacific-mobile.jpg",
         caption: "Mobile homepage with accessible navigation and quick contact actions",
       },
@@ -117,13 +117,29 @@ export const curatedProjects: Project[] = [
   },
 ];
 
+function isCoPacific(project: Pick<Project, "id" | "title">) {
+  const title = project.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  return project.id === 12 || project.id === 9004 ||
+    title === "copacificwebsite" || title === "copacificdistributors";
+}
+
 export function mergeCuratedProjects(projects: Project[]) {
+  const coPacific = curatedProjects.find((project) => project.id === 12)!;
+  let coPacificIncluded = false;
+  const refreshedProjects = projects.flatMap((project) => {
+    if (!isCoPacific(project)) return [project];
+    if (coPacificIncluded) return [];
+
+    coPacificIncluded = true;
+    return [{ ...coPacific, created_at: project.created_at, updated_at: project.updated_at }];
+  });
   const existingTitles = new Set(
-    projects.map((project) => project.title.trim().toLowerCase())
+    refreshedProjects.map((project) => project.title.trim().toLowerCase())
   );
 
   return [
-    ...projects,
+    ...refreshedProjects,
     ...curatedProjects.filter(
       (project) => !existingTitles.has(project.title.trim().toLowerCase())
     ),
@@ -131,7 +147,8 @@ export function mergeCuratedProjects(projects: Project[]) {
 }
 
 export function getCuratedProject(id?: string | number | null) {
-  const numericId = Number(id);
+  // Preserve the URL shared when Co Pacific was first added as a curated entry.
+  const numericId = Number(id) === 9004 ? 12 : Number(id);
 
   return curatedProjects.find((project) => project.id === numericId);
 }
