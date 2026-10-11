@@ -296,11 +296,12 @@ function ProjectDetails() {
     : [];
 
   const caseStudy = getProjectCaseStudy(project);
+  const liveUrl = project.live_url || caseStudy?.fallbackLiveUrl;
   const preferredDescription = getPreferredProjectDescription(project);
 
   return (
     <main className="project-detail-page">
-      <section className="project-detail-hero">
+      <section className={`project-detail-hero${caseStudy?.matchTitle === "Co Pacific" ? " project-detail-hero-copacific" : ""}`}>
         {heroImage ? (
           <img
             src={getThumbnailUrl(heroImage, 1600)}
@@ -355,14 +356,14 @@ function ProjectDetails() {
               </a>
             )}
 
-            {project.live_url && (
+            {liveUrl && (
               <a
-                href={project.live_url}
+                href={liveUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-outline"
               >
-                Live Demo
+                {caseStudy?.liveLinkLabel || "Live Demo"}
               </a>
             )}
           </div>

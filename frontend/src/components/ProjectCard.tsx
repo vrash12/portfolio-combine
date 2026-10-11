@@ -3,6 +3,7 @@ import type { Project } from "../types";
 import { getThumbnailUrl } from "../api/client";
 import {
   getPreferredProjectDescription,
+  getProjectCaseStudy,
   PROJECT_OWNERSHIP_LABEL,
   PROJECT_OWNERSHIP_STATEMENT,
 } from "../data/projectCaseStudies";
@@ -32,6 +33,8 @@ function ProjectCard({ project }: ProjectCardProps) {
   const coverImage = project.image || project.images?.[0]?.image || "";
   const hasVideo = Boolean(project.video);
   const preferredDescription = getPreferredProjectDescription(project);
+  const caseStudy = getProjectCaseStudy(project);
+  const liveUrl = project.live_url || caseStudy?.fallbackLiveUrl;
 
   return (
     <article className="project-card neo-project-card hover-project-card">
@@ -98,7 +101,7 @@ function ProjectCard({ project }: ProjectCardProps) {
           {hasVideo && <span>Video Demo</span>}
         </div>
 
-        {(project.github_url || project.live_url) && (
+        {(project.github_url || liveUrl) && (
           <div className="project-card-links">
             {project.github_url && (
               <a
@@ -111,14 +114,14 @@ function ProjectCard({ project }: ProjectCardProps) {
               </a>
             )}
 
-            {project.live_url && (
+            {liveUrl && (
               <a
-                href={project.live_url}
+                href={liveUrl}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(event) => event.stopPropagation()}
               >
-                Live Demo
+                {caseStudy?.liveLinkLabel || "Live Demo"}
               </a>
             )}
           </div>

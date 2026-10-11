@@ -62,10 +62,13 @@ const missionCards = [
     title: "Web Design & Development",
     label: "Create",
     description:
-      "I design responsive layouts and turn them into websites and web applications, from custom interfaces to WordPress.",
+      "I build responsive websites and web applications, including editable WordPress catalogs, custom themes and plugins, and technical SEO.",
     image: `${skillPath}/figma.svg`,
     fallback: "✦",
     accent: "#ffb84d",
+    workflowTitle: "WordPress & SEO delivery",
+    workflowNote:
+      "For Co Pacific Distributors, I delivered a 32-brand, 211-product WordPress catalog, migrated it to Hostinger, and validated all 249 sitemap pages with no SEO errors or warnings.",
     tools: [
       { name: "Next.js", image: `${skillPath}/nextjs.svg` },
       { name: "React", image: `${skillPath}/logo2.webp` },
@@ -76,6 +79,8 @@ const missionCards = [
       { name: "Custom CSS", image: `${skillPath}/css3.svg` },
       { name: "WordPress", image: `${skillPath}/wordpress.svg` },
       { name: "Elementor", image: `${skillPath}/elementor.svg` },
+      { name: "Technical SEO", image: `${skillPath}/technical-seo.svg` },
+      { name: "WP-CLI", image: `${skillPath}/terminal.svg` },
       { name: "Figma", image: `${skillPath}/figma.svg` },
       { name: "Vite", image: `${skillPath}/logo20.webp` },
     ],
@@ -397,7 +402,7 @@ function Home() {
               </div>
               {card.workflowNote && (
                 <div className="mission-workflow-note">
-                  <h4>AI-assisted workflow</h4>
+                  <h4>{card.workflowTitle || "AI-assisted workflow"}</h4>
                   <p>{card.workflowNote}</p>
                 </div>
               )}

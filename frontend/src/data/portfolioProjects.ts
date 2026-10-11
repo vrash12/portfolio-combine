@@ -26,6 +26,51 @@ export const curatedProjects: Project[] = [
     published: 1,
   },
   {
+    id: 9004,
+    title: "Co Pacific Distributors",
+    description:
+      "A commercial kitchen equipment and parts website rebuilt from a static site into WordPress, with an editable 32-brand, 211-product catalog, instant search, customer request flows, technical SEO, and a verified Hostinger deployment.",
+    image: "/images/projects/copacific-home.jpg",
+    category: "Web Development",
+    technologies:
+      "WordPress, PHP, MySQL, Elementor, JavaScript, HTML, CSS, Yoast SEO, Contact Form 7, Flamingo, WP-CLI, Hostinger, SSH/SFTP, Puppeteer",
+    live_url: "https://copacific.org/",
+    featured: 1,
+    published: 1,
+    images: [
+      {
+        id: 90031,
+        project_id: 9004,
+        image: "/images/projects/copacific-home.jpg",
+        caption: "Responsive homepage and custom Co Pacific theme",
+      },
+      {
+        id: 90032,
+        project_id: 9004,
+        image: "/images/projects/copacific-parts.jpg",
+        caption: "Parts hub with brand discovery, model search, and category filters",
+      },
+      {
+        id: 90033,
+        project_id: 9004,
+        image: "/images/projects/copacific-product.jpg",
+        caption: "Product gallery, specifications, and parts-request actions",
+      },
+      {
+        id: 90034,
+        project_id: 9004,
+        image: "/images/projects/copacific-contact.jpg",
+        caption: "Parts-request form with equipment details and photo upload",
+      },
+      {
+        id: 90035,
+        project_id: 9004,
+        image: "/images/projects/copacific-mobile.jpg",
+        caption: "Mobile homepage with accessible navigation and quick contact actions",
+      },
+    ],
+  },
+  {
     id: 9001,
     title: "AgriGOV Agriculture Information System",
     description:

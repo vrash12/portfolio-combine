@@ -2,6 +2,9 @@
 
 The new SVG assets are stored locally so they do not rely on an external image CDN at runtime.
 
+`technical-seo.svg` and `terminal.svg` are original interface symbols for SEO
+validation and WP-CLI. They are not third-party brand logos.
+
 ## Devicon
 
 Files: `nextjs.svg`, `typescript.svg`, `tailwindcss.svg`, `supabase.svg`,

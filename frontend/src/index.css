@@ -7864,6 +7864,16 @@ h4,
   color: var(--white);
 }
 
+.project-detail-hero-copacific .project-detail-hero-overlay {
+  background: linear-gradient(90deg, rgba(5, 14, 26, 0.98) 0%, rgba(5, 14, 26, 0.96) 52%, rgba(5, 14, 26, 0.4) 100%);
+}
+
+@media (max-width: 720px) {
+  .project-detail-hero-copacific .project-detail-hero-overlay {
+    background: linear-gradient(180deg, rgba(5, 14, 26, 0.92), rgba(5, 14, 26, 0.98));
+  }
+}
+
 .project-detail-back-link {
   display: inline-flex;
   margin-bottom: 24px;
@@ -9203,7 +9213,7 @@ h4,
 
 .about-skills-workflow-groups {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   align-content: center;
 }

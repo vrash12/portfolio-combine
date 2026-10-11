@@ -28,7 +28,7 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
         </div>
 
         <p>
-          From public transport to community services and care. Explore the
+          From public-service platforms to commercial websites. Explore the
           systems, the decisions behind them, and what each build makes possible.
         </p>
       </div>
@@ -42,6 +42,7 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
             caseStudy.fallbackImage;
           const githubUrl =
             project?.github_url || caseStudy.fallbackGithubUrl || "";
+          const liveUrl = project?.live_url || caseStudy.fallbackLiveUrl;
           const projectId = project?.id || caseStudy.projectId;
 
           return (
@@ -56,7 +57,7 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
                   <img
                     src={getThumbnailUrl(image, 720)}
                     alt={`${caseStudy.title} project preview`}
-                    className={index === 0 ? "flagship-image-contain" : undefined}
+                    className={caseStudy.projectId === 11 ? "flagship-image-contain" : undefined}
                     loading="lazy"
                     decoding="async"
                     onError={(event) => {
@@ -98,7 +99,7 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
                     View case study <span aria-hidden="true">↗</span>
                   </Link>
 
-                  {(githubUrl || project?.live_url) && (
+                  {(githubUrl || liveUrl) && (
                     <div className="flagship-secondary-links">
                       {githubUrl && (
                         <a
@@ -112,15 +113,15 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
                         </a>
                       )}
 
-                      {project?.live_url && (
+                      {liveUrl && (
                         <a
-                          href={project.live_url}
+                          href={liveUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="flagship-text-link"
                           aria-label={`${caseStudy.title} live system`}
                         >
-                          Live system <span aria-hidden="true">↗</span>
+                          {caseStudy.liveLinkLabel || "Live system"} <span aria-hidden="true">↗</span>
                         </a>
                       )}
                     </div>
@@ -134,7 +135,7 @@ function FlagshipCaseStudies({ projects }: FlagshipCaseStudiesProps) {
 
       <div className="flagship-footer">
         <div className="flagship-ownership-note">
-          <strong>My role across all three</strong>
+          <strong>My role across these builds</strong>
           <p>{PROJECT_OWNERSHIP_STATEMENT}</p>
         </div>
         <Link to="/projects" className="btn flagship-all-projects-btn">

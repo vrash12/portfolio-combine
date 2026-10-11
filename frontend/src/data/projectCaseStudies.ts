@@ -9,6 +9,8 @@ export type ProjectCaseStudy = {
   projectId: number;
   fallbackImage: string;
   fallbackGithubUrl?: string;
+  fallbackLiveUrl?: string;
+  liveLinkLabel?: string;
   label: string;
   title: string;
   summary: string;
@@ -66,6 +68,71 @@ export const flagshipCaseStudies: ProjectCaseStudy[] = [
     result: "13 exercises · real-time pose feedback",
     resultLabel: "Camera-guided home workouts with game-like progression and social challenges",
     proofLabel: "Explore the mobile app screenshots",
+  },
+  {
+    matchTitle: "Co Pacific",
+    projectId: 9004,
+    fallbackImage: "/images/projects/copacific-home.jpg",
+    fallbackLiveUrl: "https://copacific.org/",
+    liveLinkLabel: "Visit copacific.org",
+    label: "WordPress catalog, migration & technical SEO",
+    title: "Co Pacific Distributors",
+    summary:
+      "A live commercial kitchen equipment and parts website for a Guam distributor, with six editable pages, 32 brands, 211 products, instant catalog search, and guided quote, service, and parts requests.",
+    problem:
+      "The original static website needed an editable brand and product catalog, clearer equipment discovery, and a dependable move to WordPress that preserved existing links and search visibility.",
+    contribution:
+      "I rebuilt the six-page site around Elementor, created a custom Hello Elementor child theme and CoPacific Core plugin, implemented the catalog and request workflows, added technical SEO, and migrated the complete site to Hostinger over SSH.",
+    architecture:
+      "WordPress and MySQL store the content. Elementor manages page layouts, the child theme provides the shared design system and navigation, and a PHP plugin registers products, brand taxonomy, metadata, templates, shortcodes, and a cached REST search endpoint. Vanilla JavaScript handles filters, galleries, recently viewed products, and a request list stored in the visitor's browser.",
+    technologies: [
+      "WordPress",
+      "PHP",
+      "MySQL",
+      "Elementor",
+      "JavaScript / HTML / CSS",
+      "Yoast SEO",
+      "Contact Form 7",
+      "Flamingo",
+      "WP-CLI",
+      "Hostinger",
+      "SSH / SFTP",
+      "Puppeteer",
+    ],
+    capabilities: [
+      {
+        title: "Editable equipment catalog",
+        description:
+          "Custom product records and brand taxonomy organize 211 products across 32 brands, with model and SKU metadata, specifications, galleries, related items, and category filters.",
+      },
+      {
+        title: "Search-to-request journey",
+        description:
+          "Instant model and brand suggestions, recently viewed products, and a saved request list carry selected equipment into a prefilled parts form. Four forms support quick inquiries, equipment quotes, service, and parts requests.",
+      },
+      {
+        title: "Technical SEO implementation",
+        description:
+          "Yoast integration adds unique titles and descriptions, canonical URLs, social metadata, XML sitemaps, breadcrumbs, internal links, and LocalBusiness, Product, and collection structured data. Legacy .html URLs redirect to their WordPress equivalents.",
+      },
+      {
+        title: "Responsive production delivery",
+        description:
+          "Accessible mobile navigation, keyboard-friendly galleries and forms, WebP image sizes, and deferred scripts support the public experience. Hostinger deployment includes backups, database migration, serialized URL replacement, and regenerated Elementor styles.",
+      },
+    ],
+    delivery: [
+      "Custom child theme and PHP plugin keep presentation, catalog logic, and editable content separate",
+      "WP-CLI importer updates media, catalog records, forms, pages, menus, and SEO data without duplicating imported objects",
+      "SSH/SFTP deployment with a verified upload checksum, old-site backup, production database settings, fresh security keys, and tested administrator access",
+      "Rebuilt 274 image sets and confirmed that no attachment files or localhost URLs remained in Elementor content",
+      "Browser checks covered all six pages, representative catalog routes, request-list prefilling, form tabs, mobile navigation, broken images, and layout overflow",
+      "Audited all 249 sitemap URLs plus search and 404 pages: zero errors or warnings, no duplicate titles or descriptions, and valid structured data",
+    ],
+    result: "32 brands · 211 products · 0 SEO issues",
+    resultLabel:
+      "Six pages deployed at copacific.org; all 249 sitemap pages passed the launch SEO audit",
+    proofLabel: "Explore the build & live website",
   },
   {
     matchTitle: "PGT Onboard",

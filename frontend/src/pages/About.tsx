@@ -37,6 +37,12 @@ const skillGroups = [
     ],
   },
   {
+    title: "WordPress & Technical SEO",
+    description: "Editable catalogs, custom WordPress features, and search-ready website migrations.",
+    iconPath: "M3 4h18v16H3V4Zm0 5h18M7 6.5h.01M10 6.5h.01M7 13h4m-4 3h6m3-3 2 2-2 2",
+    items: ["Child Themes", "Custom Plugins", "Custom Post Types", "Taxonomies", "WordPress REST API", "Yoast SEO", "JSON-LD", "XML Sitemaps", "Canonical URLs", "301 Redirects", "Contact Form 7", "Flamingo"],
+  },
+  {
     title: "Mobile Development",
     description: "Connected experiences that go beyond the browser.",
     iconPath: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm3 3h4m-3 14h2",
@@ -75,7 +81,11 @@ const workflowGroups = [
   },
   {
     title: "Cloud & deployment",
-    items: ["Docker", "AWS", "Google Cloud Run"],
+    items: ["Docker", "AWS", "Google Cloud Run", "Hostinger", "SSH/SFTP", "WP-CLI", "Database Migration", "XAMPP"],
+  },
+  {
+    title: "Browser & SEO validation",
+    items: ["Puppeteer", "Chrome DevTools", "Responsive Testing", "Sitemap Audits", "Structured Data Validation", "WebP Optimization"],
   },
   {
     title: "AI-assisted development",
@@ -755,7 +765,7 @@ ${contactForm.message}
                     <span aria-hidden="true">03 /</span> Independent work
                   </span>
                   <span className="about-experience-date">
-                    <time dateTime="2024">2024</time> - <time dateTime="2026-09">September 2026</time>
+                    <time dateTime="2024">2024</time> — <time dateTime="2026-09">September 2026</time>
                   </span>
                 </div>
                 <div className="about-experience-role-title">
